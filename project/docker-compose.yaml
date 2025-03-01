@@ -1,0 +1,27 @@
+services:
+  user_service:
+    container_name: user_service
+    build:
+      context: ../user
+      dockerfile: ../user/Dockerfile
+    ports:
+      - "5000:5000"
+    restart: always
+    depends_on:
+      - postgres
+    env_file:
+      - ../user/.env
+
+  postgres:
+    container_name: postgres
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ../user/.env
+
+volumes:
+  postgres_data:

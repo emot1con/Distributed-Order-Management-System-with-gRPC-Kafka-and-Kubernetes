@@ -1,0 +1,120 @@
+package service
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+	"user_service/auth"
+	"user_service/repository"
+	"user_service/types"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+)
+
+type UserService struct {
+	DB        *gorm.DB
+	validator *validator.Validate
+	repo      *repository.UserRepository
+}
+
+func NewUserService(DB *gorm.DB, repo *repository.UserRepository) *UserService {
+	return &UserService{
+		DB:        DB,
+		validator: validator.New(),
+		repo:      repo,
+	}
+}
+
+func (u *UserService) Register(payload types.RegisterPayload) error {
+	if err := u.validator.Struct(payload); err != nil {
+		return err
+	}
+
+	if _, err := u.repo.GetUserByEmail(payload.Email); err == nil {
+		return fmt.Errorf("email already exists")
+	}
+
+	hashedPassword, err := auth.GeneratePasswordHash(payload.Password)
+	if err != nil {
+		return err
+	}
+	payload.Password = hashedPassword
+
+	if err := u.repo.Register(payload); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *UserService) Login(payload types.LoginPayload) (string, string, error) {
+	if err := u.validator.Struct(payload); err != nil {
+		return "", "", err
+	}
+
+	user, err := u.repo.GetUserByEmail(payload.Email)
+	if err != nil {
+		return "", "", fmt.Errorf("email not found")
+	}
+
+	if err := auth.ComparePasswordHash(user.Password, []byte(payload.Password)); err != nil {
+		return "", "", fmt.Errorf("invalid credentials")
+	}
+
+	token, err := auth.CreateJWTToken(user.ID, "user", 0, 0, 1)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := auth.CreateJWTToken(user.ID, "user", 0, 3, 0)
+	if err != nil {
+		return "", "", err
+	}
+
+	logrus.Info("logged!")
+
+	return token, refreshToken, nil
+}
+
+func (u *UserService) RefreshToken(payload string) (string, string, error) {
+	token, err := jwt.Parse(payload, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+	if err != nil || !token.Valid {
+		return "", "", err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", "", fmt.Errorf("invalid claims")
+	}
+
+	expiredAt := int64(claims["exp"].(float64))
+	if time.Now().Unix() > expiredAt {
+		return "", "", fmt.Errorf("refresh token expired")
+	}
+
+	ID, err := strconv.Atoi(claims["userID"].(string))
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse user ID")
+	}
+
+	newToken, err := auth.CreateJWTToken(ID, "user", 0, 0, 1)
+	if err != nil {
+		return "", "", err
+	}
+
+	newRefreshToken, err := auth.CreateJWTToken(ID, "user", 0, 3, 0)
+	if err != nil {
+		return "", "", err
+	}
+
+	return newToken, newRefreshToken, nil
+}
