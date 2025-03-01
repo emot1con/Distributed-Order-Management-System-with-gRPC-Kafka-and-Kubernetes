@@ -4,6 +4,7 @@ package usergrpc;
 
 option go_package = "/usergrpc";
 
+
 message User {
   int32 id = 1;
   string full_name = 2;
@@ -19,14 +20,28 @@ message RegisterPayload {
   string password = 3;
 }
 
+message RegisterRequest {
+  RegisterPayload payload = 1;
+}
+
 message LoginPayload {
   string email = 1;
   string password = 2;
 }
 
+message LoginRequest {
+  LoginPayload payload = 1;
+}
+
 message RefreshTokenPayload {
   string refresh_token = 1;
 }
+
+message RefreshTokenRequest {
+  RefreshTokenPayload payload = 1;
+}
+
+message EmptyResponse{}
 
 message TokenResponse {
   string message = 1;
@@ -38,7 +53,7 @@ message TokenResponse {
 }
 
 service AuthService {
-  rpc Register(RegisterPayload) returns (TokenResponse);
-  rpc Login(LoginPayload) returns (TokenResponse);
-  rpc RefreshToken(RefreshTokenPayload) returns (TokenResponse);
+  rpc Register(RegisterRequest) returns (EmptyResponse);
+  rpc Login(LoginRequest) returns (TokenResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (TokenResponse);
 }

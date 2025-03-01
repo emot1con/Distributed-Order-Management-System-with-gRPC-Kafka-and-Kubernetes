@@ -20,5 +20,6 @@ func CreateJWTToken(userID int, role string, y, m, d int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return tokenString, nil
+
+	return "Bearer " + tokenString, nil
 }

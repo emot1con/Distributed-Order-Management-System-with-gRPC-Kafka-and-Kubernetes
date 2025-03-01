@@ -5,7 +5,7 @@ services:
       context: ../user
       dockerfile: ../user/Dockerfile
     ports:
-      - "5000:5000"
+      - "50001:50001"
     restart: always
     depends_on:
       - postgres
