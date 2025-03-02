@@ -2,12 +2,9 @@ package main
 
 import (
 	"sync"
-	// "user_service/cmd/db"
-	"user_service/grpcuser"
-	// "user_service/repository"
-	// "user_service/service"
 
 	"github.com/sirupsen/logrus"
+	"user_service/grpcuser"
 )
 
 func main() {

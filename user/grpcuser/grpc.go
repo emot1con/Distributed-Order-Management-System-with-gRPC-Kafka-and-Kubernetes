@@ -33,7 +33,7 @@ func (u *UserGRPCServer) Register(ctx context.Context, req *usergrpc.RegisterReq
 	}
 	logrus.Info("user regisered successfully")
 
-	return &usergrpc.EmptyResponse{}, nil
+	return nil, nil
 }
 
 func (u *UserGRPCServer) Login(ctx context.Context, req *usergrpc.LoginRequest) (*usergrpc.TokenResponse, error) {
@@ -72,11 +72,7 @@ func GRPCListen() {
 	DB, err := db.Connect()
 	repo := repository.NewUserRepository(DB)
 	service := service.NewUserService(repo)
-	grpcUser := NewUserGRPCServer(service)
-
-	if service == nil {
-		logrus.Fatal("UserService is nil")
-	}
+	connection := NewUserGRPCServer(service)
 
 	if err != nil {
 		logrus.Fatalf("failed to connect to database: %v", err)
@@ -88,7 +84,7 @@ func GRPCListen() {
 	}
 
 	srv := grpc.NewServer()
-	usergrpc.RegisterAuthServiceServer(srv, grpcUser)
+	usergrpc.RegisterAuthServiceServer(srv, connection)
 	logrus.Infof("gRPC Server started on port 50001")
 
 	if err := srv.Serve(lis); err != nil {

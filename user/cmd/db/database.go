@@ -12,18 +12,15 @@ import (
 )
 
 func Connect() (*gorm.DB, error) {
-	dbModel := []interface{}{&usergrpc.User{}}
-
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPass := os.Getenv("POSTGRES_PASSWORD")
 	dbName := os.Getenv("POSTGRES_DB")
 	dsn := fmt.Sprintf("host=postgres user=%s password=%s dbname=%s port=5432 sslmode=disable TimeZone=Asia/Jakarta", dbUser, dbPass, dbName)
+
 	for i := 0; i < 5; i++ {
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err == nil {
-			for _, v := range dbModel {
-				db.AutoMigrate(v)
-			}
+			db.AutoMigrate(&usergrpc.User{})
 			return db, nil
 		}
 

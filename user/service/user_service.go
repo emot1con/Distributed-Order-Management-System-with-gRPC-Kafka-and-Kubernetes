@@ -65,7 +65,6 @@ func (u *UserService) Login(payload *usergrpc.LoginPayload) (string, string, err
 	if err != nil {
 		return "", "", err
 	}
-
 	logrus.Info("logged!")
 
 	return token, refreshToken, nil
@@ -79,7 +78,7 @@ func (u *UserService) RefreshToken(payload string) (string, string, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	if err != nil || !token.Valid {
-		return "", "", err
+		return "", "", fmt.Errorf("invalid token")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
