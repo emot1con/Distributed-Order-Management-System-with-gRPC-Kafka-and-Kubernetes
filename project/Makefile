@@ -1,4 +1,5 @@
 SHELL=cmd.exe
+BROKER_BINARY=brokerApp
 USER_BINARY=userApp
 
 ## up: starts all containers in the background without forcing build
@@ -8,7 +9,7 @@ up:
 	@echo Docker images started!
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_user
+up_build: build_user build_broker
 	@echo Stopping docker images (if running...)
 	docker-compose down
 	@echo Building (when required) and starting docker images...
@@ -21,10 +22,16 @@ down:
 	docker-compose down
 	@echo Done!
 
+## build_broker: builds the broker binary as a linux executable
+build_broker:
+	@echo Building broker binary...
+	chdir ..\broker && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${BROKER_BINARY} ./cmd/app
+	@echo Done!
+
 ## build_user: builds the user binary as a linux executable
 build_user:
 	@echo Building user binary...
-	chdir ..\user && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${USER_BINARY} ./cmd
+	chdir ..\user && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${USER_BINARY} ./cmd/app
 	@echo Done!
 
 ## stop: stop the front end

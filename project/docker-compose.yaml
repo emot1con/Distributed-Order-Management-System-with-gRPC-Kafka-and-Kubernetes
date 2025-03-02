@@ -1,4 +1,15 @@
 services:
+  broker_service:
+    container_name: broker_service
+    build:
+      context: ../broker
+      dockerfile: ../broker/Dockerfile
+    ports:
+      - "8080:8080"
+    restart: always
+    depends_on:
+      - user_service
+
   user_service:
     container_name: user_service
     build:
@@ -11,7 +22,6 @@ services:
       - postgres
     env_file:
       - ../user/.env
-
   postgres:
     container_name: postgres
     image: postgres:13

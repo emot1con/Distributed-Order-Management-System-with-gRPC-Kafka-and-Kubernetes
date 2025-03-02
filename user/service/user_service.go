@@ -7,33 +7,27 @@ import (
 	"time"
 	"user_service/auth"
 	"user_service/repository"
-	"user_service/types"
+	"user_service/user/usergrpc"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 type UserService struct {
-	DB        *gorm.DB
 	validator *validator.Validate
-	repo      *repository.UserRepository
+	repo      repository.UserRepository
 }
 
-func NewUserService(DB *gorm.DB, repo *repository.UserRepository) *UserService {
+func NewUserService(repo repository.UserRepository) *UserService {
 	return &UserService{
-		DB:        DB,
 		validator: validator.New(),
 		repo:      repo,
 	}
 }
 
-func (u *UserService) Register(payload types.RegisterPayload) error {
-	if err := u.validator.Struct(payload); err != nil {
-		return err
-	}
-
+func (u *UserService) Register(payload *usergrpc.RegisterPayload) error {
+	logrus.Info("get user")
 	if _, err := u.repo.GetUserByEmail(payload.Email); err == nil {
 		return fmt.Errorf("email already exists")
 	}
@@ -44,6 +38,7 @@ func (u *UserService) Register(payload types.RegisterPayload) error {
 	}
 	payload.Password = hashedPassword
 
+	logrus.Info("registering user to db")
 	if err := u.repo.Register(payload); err != nil {
 		return err
 	}
@@ -51,11 +46,7 @@ func (u *UserService) Register(payload types.RegisterPayload) error {
 	return nil
 }
 
-func (u *UserService) Login(payload types.LoginPayload) (string, string, error) {
-	if err := u.validator.Struct(payload); err != nil {
-		return "", "", err
-	}
-
+func (u *UserService) Login(payload *usergrpc.LoginPayload) (string, string, error) {
 	user, err := u.repo.GetUserByEmail(payload.Email)
 	if err != nil {
 		return "", "", fmt.Errorf("email not found")
@@ -65,12 +56,12 @@ func (u *UserService) Login(payload types.LoginPayload) (string, string, error) 
 		return "", "", fmt.Errorf("invalid credentials")
 	}
 
-	token, err := auth.CreateJWTToken(user.ID, "user", 0, 0, 1)
+	token, err := auth.CreateJWTToken(int(user.ID), "user", 0, 0, 1)
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := auth.CreateJWTToken(user.ID, "user", 0, 3, 0)
+	refreshToken, err := auth.CreateJWTToken(int(user.ID), "user", 0, 3, 0)
 	if err != nil {
 		return "", "", err
 	}

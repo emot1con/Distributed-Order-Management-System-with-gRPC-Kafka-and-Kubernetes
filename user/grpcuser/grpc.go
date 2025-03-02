@@ -3,51 +3,43 @@ package grpcuser
 import (
 	"context"
 	"net"
-	"strings"
 	"time"
+
+	"user_service/cmd/db"
+	"user_service/repository"
 	"user_service/service"
-	"user_service/types"
 	"user_service/user/usergrpc"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
 type UserGRPCServer struct {
-	service service.UserService
+	service *service.UserService
 	usergrpc.UnimplementedAuthServiceServer
 }
 
+func NewUserGRPCServer(service *service.UserService) *UserGRPCServer {
+	return &UserGRPCServer{
+		service: service,
+	}
+}
+
 func (u *UserGRPCServer) Register(ctx context.Context, req *usergrpc.RegisterRequest) (*usergrpc.EmptyResponse, error) {
-	payload := req.GetPayload()
-
-	dataLog := types.RegisterPayload{
-		FullName: payload.FullName,
-		Email:    payload.Email,
-		Password: payload.Password,
+	if err := u.service.Register(req.Payload); err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed registering user: %v", err)
 	}
-
-	if err := u.service.Register(dataLog); err != nil {
-		return nil, status.Errorf(codes.Internal, "Gagal menyimpan user: %v", err)
-	}
+	logrus.Info("user regisered successfully")
 
 	return &usergrpc.EmptyResponse{}, nil
 }
 
 func (u *UserGRPCServer) Login(ctx context.Context, req *usergrpc.LoginRequest) (*usergrpc.TokenResponse, error) {
-	payload := req.GetPayload()
-
-	dataLog := types.LoginPayload{
-		Email:    payload.Email,
-		Password: payload.Password,
-	}
-
-	token, refreshtoken, err := u.service.Login(dataLog)
+	token, refreshtoken, err := u.service.Login(req.Payload)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error: %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &usergrpc.TokenResponse{
@@ -61,25 +53,9 @@ func (u *UserGRPCServer) Login(ctx context.Context, req *usergrpc.LoginRequest) 
 }
 
 func (u *UserGRPCServer) RefreshToken(ctx context.Context, req *usergrpc.RefreshTokenRequest) (*usergrpc.TokenResponse, error) {
-
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, status.Errorf(codes.Unauthenticated, "missing metadata")
-	}
-
-	authHeader, exists := md["authorization"]
-	if !exists || len(authHeader) == 0 {
-		return nil, status.Errorf(codes.Unauthenticated, "missing authorization token")
-	}
-
-	authToken := strings.TrimPrefix(authHeader[0], "Bearer ")
-	if authToken == authHeader[0] {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid token format")
-	}
-
-	token, refreshtoken, err := u.service.RefreshToken(authToken)
+	token, refreshtoken, err := u.service.RefreshToken(req.Payload.RefreshToken)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error: %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &usergrpc.TokenResponse{
@@ -93,13 +69,26 @@ func (u *UserGRPCServer) RefreshToken(ctx context.Context, req *usergrpc.Refresh
 }
 
 func GRPCListen() {
+	DB, err := db.Connect()
+	repo := repository.NewUserRepository(DB)
+	service := service.NewUserService(repo)
+	grpcUser := NewUserGRPCServer(service)
+
+	if service == nil {
+		logrus.Fatal("UserService is nil")
+	}
+
+	if err != nil {
+		logrus.Fatalf("failed to connect to database: %v", err)
+	}
+
 	lis, err := net.Listen("tcp", ":50001")
 	if err != nil {
 		logrus.Fatalf("Failed to listen for gRPC: %v", err)
 	}
 
 	srv := grpc.NewServer()
-	usergrpc.RegisterAuthServiceServer(srv, &UserGRPCServer{})
+	usergrpc.RegisterAuthServiceServer(srv, grpcUser)
 	logrus.Infof("gRPC Server started on port 50001")
 
 	if err := srv.Serve(lis); err != nil {

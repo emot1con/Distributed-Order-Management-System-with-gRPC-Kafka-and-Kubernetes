@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "user"
+		},
+		{
+			"path": "product"
+		},
+		{
+			"path": "project"
+		},
+		{
+			"path": "broker"
+		}
+	]
+}

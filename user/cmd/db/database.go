@@ -4,16 +4,15 @@ import (
 	"fmt"
 	"os"
 	"time"
-	"user_service/types"
+	"user_service/user/usergrpc"
 
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func Connect(c *gin.Context) (*gorm.DB, error) {
-	dbModel := []interface{}{&types.User{}}
+func Connect() (*gorm.DB, error) {
+	dbModel := []interface{}{&usergrpc.User{}}
 
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPass := os.Getenv("POSTGRES_PASSWORD")
