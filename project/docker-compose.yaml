@@ -35,6 +35,8 @@ services:
       - postgres
     env_file:
       - ../product/.env
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
   
   postgres:
     container_name: postgres
