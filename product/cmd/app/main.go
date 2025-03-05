@@ -17,7 +17,6 @@ func main() {
 	}
 
 	logrus.Info("Starting server on port 40001")
-
 	if err := srv.ListenAndServe(); err != nil {
 		logrus.Fatalf("Failed to start server: %v", err)
 	}

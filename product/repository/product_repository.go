@@ -9,8 +9,8 @@ import (
 
 type ProductRepository interface {
 	Create(ctx context.Context, tx *sql.Tx, payload *product.ProductPayload) error
-	GetProductByID(ctx context.Context, tx *sql.Tx, ID int) (product.Product, error)
-	GetAllProduct(ctx context.Context, tx *sql.Tx) ([]*product.Product, error)
+	GetProductByID(ctx context.Context, tx *sql.Tx, ID int) (*product.Product, error)
+	GetAllProduct(ctx context.Context, tx *sql.Tx, offset int) ([]*product.Product, error)
 	UpdateProduct(ctx context.Context, tx *sql.Tx, payload *product.Product) error
 	DeleteProduct(ctx context.Context, tx *sql.Tx, ID int) error
 }
@@ -44,14 +44,13 @@ func (u *ProductRepositoryImpl) GetProductByID(ctx context.Context, tx *sql.Tx, 
 			return nil, err
 		}
 		return productResponse, nil
-	} else {
-		return productResponse, errors.New("product is not found")
 	}
+	return productResponse, errors.New("product is not found")
 }
 
-func (u *ProductRepositoryImpl) GetAllProduct(ctx context.Context, tx *sql.Tx) ([]*product.Product, error) {
-	SQL := "SELECT id, name, description, price, stock, created_at, updated_at FROM product"
-	rows, err := tx.QueryContext(ctx, SQL)
+func (u *ProductRepositoryImpl) GetAllProduct(ctx context.Context, tx *sql.Tx, offset int) ([]*product.Product, error) {
+	SQL := "SELECT id, name, description, price, stock, created_at, updated_at FROM product ORDER BY created_at DESC LIMIT 15 OFFSET $2"
+	rows, err := tx.QueryContext(ctx, SQL, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -70,17 +69,35 @@ func (u *ProductRepositoryImpl) GetAllProduct(ctx context.Context, tx *sql.Tx) (
 }
 
 func (u *ProductRepositoryImpl) UpdateProduct(ctx context.Context, tx *sql.Tx, payload *product.Product) error {
-	SQL := "update product set name = ?, description = ?, price = ?, stock = ?, updated_at = ? where id = ?"
-	if _, err := tx.ExecContext(ctx, SQL, payload.Name, payload.Description, payload.Price, payload.Stock, payload, payload.UpdatedAt, payload.Id); err != nil {
+	SQL := `UPDATE product 
+        SET name = COALESCE(NULLIF($1, ''), name),
+            description = COALESCE(NULLIF($2, ''), description),
+            price = $3,
+            stock = $4,
+            updated_at = $5
+        WHERE id = $6`
+	if _, err := tx.ExecContext(ctx, SQL, payload.Name, payload.Description, payload.Price, payload.Stock, payload.UpdatedAt, payload.Id); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (repository *ProductRepositoryImpl) DeleteProduct(ctx context.Context, tx *sql.Tx, ID int) error {
-	SQL := "delete from product where id = ?"
-	if _, err := tx.ExecContext(ctx, SQL, ID); err != nil {
+	SQL := "DELETE FROM product WHERE id = ?"
+	result, err := tx.ExecContext(ctx, SQL, ID)
+	if err != nil {
 		return err
 	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("product not found")
+	}
+
 	return nil
 }
