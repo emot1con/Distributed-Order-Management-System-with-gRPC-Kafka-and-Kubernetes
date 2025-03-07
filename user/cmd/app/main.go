@@ -3,8 +3,9 @@ package main
 import (
 	"sync"
 
+	"user_service/transport/grpc"
+
 	"github.com/sirupsen/logrus"
-	"user_service/grpcuser"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		logrus.Info("Calling GRPCListen()")
-		grpcuser.GRPCListen()
+		grpc.GRPCListen()
 		logrus.Info("GRPCListen() exited")
 	}()
 

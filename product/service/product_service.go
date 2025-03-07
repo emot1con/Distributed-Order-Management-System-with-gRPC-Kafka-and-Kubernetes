@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"product_service/helper"
-	"product_service/product"
+	"product_service/proto"
 	"product_service/repository"
-	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ProductService struct {
@@ -23,71 +24,70 @@ func NewProductService(ProductRepository repository.ProductRepository, DB *sql.D
 	}
 }
 
-func (u *ProductService) Create(payload *product.ProductRequest) (string, error) {
+func (u *ProductService) Create(payload *proto.ProductRequest) error {
 	tx, err := u.DB.Begin()
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer helper.CommitOrRollback(tx)
 
+	logrus.Info("calling create product service")
 	if err := u.repo.Create(u.ctx, tx, payload.Payload); err != nil {
-		return "", err
+		return err
 	}
 
-	return "success add product", nil
+	return nil
 }
 
-func (u *ProductService) Update(payload *product.Product) (string, error) {
+func (u *ProductService) Update(payload *proto.Product) (*proto.Product, error) {
 	tx, err := u.DB.Begin()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer helper.CommitOrRollback(tx)
 
-	productResult, err := u.repo.GetProductByID(u.ctx, tx, int(payload.Id))
+	logrus.Info("getting product")
+	productResult, err := u.repo.GetProductByID(u.ctx, u.DB, int(payload.Id))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	productResult.Name = payload.Name
 	productResult.Description = payload.Description
 	productResult.Price = payload.Price
 	productResult.Stock = payload.Stock
-	productResult.UpdatedAt = time.Now().Format(time.RFC3339)
 
 	if err := u.repo.UpdateProduct(u.ctx, tx, payload); err != nil {
-		return "", err
-	}
-
-	return "success update product", nil
-}
-
-func (u *ProductService) GetAll(page int) ([]*product.Product, error) {
-	tx, err := u.DB.Begin()
-	if err != nil {
 		return nil, err
 	}
-	defer helper.CommitOrRollback(tx)
+	logrus.Info("product updated")
 
+	return productResult, nil
+}
+
+func (u *ProductService) GetAll(page int) ([]*proto.Product, int, int, int, error) {
 	offset := (page - 1) * 10
-	products, err := u.repo.GetAllProduct(u.ctx, tx, offset)
+
+	logrus.Info("getting all products")
+
+	products, totalProducts, totalPage, err := u.repo.GetAllProduct(u.ctx, u.DB, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, 0, err
 	}
 
-	return products, nil
+	return products, totalProducts, totalPage, page, nil
 }
 
-func (u *ProductService) Delete(ID int) (string, error) {
+func (u *ProductService) Delete(ID int) error {
 	tx, err := u.DB.Begin()
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer helper.CommitOrRollback(tx)
 
 	if err := u.repo.DeleteProduct(u.ctx, tx, ID); err != nil {
-		return "", err
+		return err
 	}
 
-	return "success delete product", nil
+	return nil
 }

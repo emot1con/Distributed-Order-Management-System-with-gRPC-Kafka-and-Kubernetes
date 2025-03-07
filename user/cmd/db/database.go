@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"time"
-	"user_service/user/usergrpc"
+	"user_service/proto"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
@@ -20,7 +20,7 @@ func Connect() (*gorm.DB, error) {
 	for i := 0; i < 5; i++ {
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err == nil {
-			db.AutoMigrate(&usergrpc.User{})
+			db.AutoMigrate(&proto.User{})
 			return db, nil
 		}
 

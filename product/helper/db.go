@@ -1,13 +1,25 @@
 package helper
 
-import "database/sql"
+import (
+	"database/sql"
 
-func CommitOrRollback(tx *sql.Tx) error {
+	"github.com/sirupsen/logrus"
+)
+
+func CommitOrRollback(tx *sql.Tx) {
 	err := recover()
 	if err != nil {
 		rollbackError := tx.Rollback()
-		return rollbackError
+		if rollbackError != nil {
+			logrus.Errorf("rollback error %v", rollbackError)
+			panic(rollbackError)
+		}
+		logrus.Errorf("error recover %v", err)
+		panic(err)
 	}
 	commitRollback := tx.Commit()
-	return commitRollback
+	if commitRollback != nil {
+		logrus.Errorf("commit error %v", commitRollback)
+		panic(commitRollback)
+	}
 }

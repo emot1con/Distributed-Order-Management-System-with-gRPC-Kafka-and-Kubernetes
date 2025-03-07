@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"broker/usergrpc"
+	"broker/proto"
 	"context"
 	"time"
 
@@ -11,39 +11,33 @@ import (
 )
 
 type UserRepository interface {
-	Register(*usergrpc.RegisterRequest) error
-	Login(*usergrpc.LoginRequest) (*usergrpc.TokenResponse, error)
-	RefreshToken(*usergrpc.RefreshTokenRequest) (*usergrpc.TokenResponse, error)
+	Register(*proto.RegisterRequest) error
+	Login(*proto.LoginRequest) (*proto.TokenResponse, error)
+	RefreshToken(*proto.RefreshTokenRequest) (*proto.TokenResponse, error)
 }
 
 type UserRepositoryImpl struct {
-	usergrpc.UnimplementedAuthServiceServer
+	client proto.AuthServiceClient
 }
 
 func NewUserRepository() *UserRepositoryImpl {
-	return &UserRepositoryImpl{
-		UnimplementedAuthServiceServer: usergrpc.UnimplementedAuthServiceServer{},
+	conn, err := grpc.NewClient("user_service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logrus.Fatalf("Failed to connect: %v", err)
 	}
+	logrus.Info("Connected to user service")
+
+	client := proto.NewAuthServiceClient(conn)
+
+	return &UserRepositoryImpl{client: client}
 }
 
-func (u *UserRepositoryImpl) Register(payload *usergrpc.RegisterRequest) error {
-	conn, err := grpc.NewClient("user_service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	if err != nil {
-		logrus.Error("Failed to connect: ", err)
-		return err
-	}
-	defer conn.Close()
-
-	c := usergrpc.NewAuthServiceClient(conn)
-
+func (u *UserRepositoryImpl) Register(payload *proto.RegisterRequest) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	logrus.Info("Connected to user service")
-
-	_, err = c.Register(ctx, &usergrpc.RegisterRequest{
-		Payload: &usergrpc.RegisterPayload{
+	_, err := u.client.Register(ctx, &proto.RegisterRequest{
+		Payload: &proto.RegisterPayload{
 			FullName: payload.Payload.FullName,
 			Email:    payload.Payload.Email,
 			Password: payload.Payload.Password,
@@ -58,56 +52,25 @@ func (u *UserRepositoryImpl) Register(payload *usergrpc.RegisterRequest) error {
 	return nil
 }
 
-func (u *UserRepositoryImpl) Login(payload *usergrpc.LoginRequest) (*usergrpc.TokenResponse, error) {
-	conn, err := grpc.NewClient("user_service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		logrus.Error("Failed to connect: ", err)
-		return nil, err
-	}
-	defer conn.Close()
-
-	c := usergrpc.NewAuthServiceClient(conn)
+func (u *UserRepositoryImpl) Login(payload *proto.LoginRequest) (*proto.TokenResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	logrus.Info("Connected to user service")
-
-	response, err := c.Login(ctx, &usergrpc.LoginRequest{
-		Payload: &usergrpc.LoginPayload{
+	return u.client.Login(ctx, &proto.LoginRequest{
+		Payload: &proto.LoginPayload{
 			Email:    payload.Payload.Email,
 			Password: payload.Payload.Password,
 		},
 	})
-	if err != nil {
-		logrus.Error("Failed to register: ", err)
-		return nil, err
-	}
-
-	return response, nil
 }
 
-func (u *UserRepositoryImpl) RefreshToken(payload *usergrpc.RefreshTokenRequest) (*usergrpc.TokenResponse, error) {
-	conn, err := grpc.NewClient("user_service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		logrus.Error("Failed to connect: ", err)
-		return nil, err
-	}
-	defer conn.Close()
-
-	c := usergrpc.NewAuthServiceClient(conn)
+func (u *UserRepositoryImpl) RefreshToken(payload *proto.RefreshTokenRequest) (*proto.TokenResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	logrus.Info("Connected to user service")
-
-	response, err := c.RefreshToken(ctx, &usergrpc.RefreshTokenRequest{
-		Payload: &usergrpc.RefreshTokenPayload{
+	return u.client.RefreshToken(ctx, &proto.RefreshTokenRequest{
+		Payload: &proto.RefreshTokenPayload{
 			RefreshToken: payload.Payload.RefreshToken,
 		},
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return response, nil
 }

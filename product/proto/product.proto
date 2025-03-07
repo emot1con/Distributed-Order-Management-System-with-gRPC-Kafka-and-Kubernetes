@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package product;
 
-option go_package = "../product";
+option go_package = "../proto";
 
 message Product {
   uint32 id = 1;
@@ -27,18 +27,25 @@ message ProductPayload {
 
 service ProductService {
   rpc CreateProduct(ProductRequest) returns (Empty);
-  rpc GetProductByID(GetProductRequest) returns (Product);
-  rpc ListProducts(Empty) returns (ProductList);
-  rpc UpdateProduct(GetProductRequest) returns (Product);
+  rpc ListProducts(Offset) returns (ProductList);
+  rpc UpdateProduct(Product) returns (Product);
   rpc DeleteProduct(GetProductRequest) returns (Empty);
 }
 
 message GetProductRequest {
-  uint32 id = 1;
+  int32 id = 1;
+}
+
+message Offset {
+  int32 id = 1;
 }
 
 message ProductList {
-  repeated Product products = 1;
+  int64 total = 1;
+  int32 page = 2;
+  int32 total_page = 3;
+  repeated Product products = 4;
 }
+
 
 message Empty {}

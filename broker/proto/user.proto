@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package usergrpc;
+package user;
 
-option go_package = "../usergrpc";
+option go_package = "../proto";
 
 
 message User {
-  int32 id = 1;
+  int32 ID = 1;
   string full_name = 2;
   string email = 3;
   string password = 4;

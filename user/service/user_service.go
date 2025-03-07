@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 	"user_service/auth"
+	"user_service/proto"
 	"user_service/repository"
-	"user_service/user/usergrpc"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt"
@@ -26,7 +26,7 @@ func NewUserService(repo repository.UserRepository) *UserService {
 	}
 }
 
-func (u *UserService) Register(payload *usergrpc.RegisterPayload) error {
+func (u *UserService) Register(payload *proto.RegisterPayload) error {
 	logrus.Info("get user")
 	if _, err := u.repo.GetUserByEmail(payload.Email); err == nil {
 		return fmt.Errorf("email already exists")
@@ -46,7 +46,7 @@ func (u *UserService) Register(payload *usergrpc.RegisterPayload) error {
 	return nil
 }
 
-func (u *UserService) Login(payload *usergrpc.LoginPayload) (string, string, error) {
+func (u *UserService) Login(payload *proto.LoginPayload) (string, string, error) {
 	user, err := u.repo.GetUserByEmail(payload.Email)
 	if err != nil {
 		return "", "", fmt.Errorf("email not found")
