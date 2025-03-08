@@ -108,3 +108,12 @@ func (u *UserService) RefreshToken(payload string) (string, string, error) {
 
 	return newToken, newRefreshToken, nil
 }
+
+func (u *UserService) GetUserByID(ID int) (*proto.User, error) {
+	user, err := u.repo.GetUserByID(ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}

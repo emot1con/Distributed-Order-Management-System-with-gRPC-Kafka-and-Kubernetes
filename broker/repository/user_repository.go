@@ -14,6 +14,7 @@ type UserRepository interface {
 	Register(*proto.RegisterRequest) error
 	Login(*proto.LoginRequest) (*proto.TokenResponse, error)
 	RefreshToken(*proto.RefreshTokenRequest) (*proto.TokenResponse, error)
+	GetUserByID(ID int) (*proto.User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -73,4 +74,13 @@ func (u *UserRepositoryImpl) RefreshToken(payload *proto.RefreshTokenRequest) (*
 			RefreshToken: payload.Payload.RefreshToken,
 		},
 	})
+}
+
+func (u *UserRepositoryImpl) GetUserByID(ID int) (*proto.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return u.client.GetUserByID(ctx, &proto.GetUserRequest{
+		UserId: int64(ID)},
+	)
 }

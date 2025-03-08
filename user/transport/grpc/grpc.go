@@ -68,6 +68,22 @@ func (u *UserGRPCServer) RefreshToken(ctx context.Context, req *proto.RefreshTok
 	}, nil
 }
 
+func (u *UserGRPCServer) GetUserByID(ctx context.Context, req *proto.GetUserRequest) (*proto.User, error) {
+	user, err := u.service.GetUserByID(int(req.UserId))
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &proto.User{
+		ID:        int32(user.ID),
+		FullName:  user.FullName,
+		Email:     user.Email,
+		Password:  user.Password,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}, nil
+}
+
 func GRPCListen() {
 	DB, err := db.Connect()
 	repo := repository.NewUserRepository(DB)

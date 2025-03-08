@@ -52,8 +52,13 @@ message TokenResponse {
   string role = 6;
 }
 
+message GetUserRequest {
+  int64 user_id = 1;
+}
+
 service AuthService {
   rpc Register(RegisterRequest) returns (EmptyResponse);
   rpc Login(LoginRequest) returns (TokenResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (TokenResponse);
+  rpc GetUserByID(GetUserRequest) returns (User);
 }

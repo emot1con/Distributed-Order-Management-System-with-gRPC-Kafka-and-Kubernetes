@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"broker/auth"
 	"broker/proto"
 	"broker/repository"
 	"strconv"
@@ -9,20 +10,25 @@ import (
 )
 
 type ProductHandler struct {
-	repo repository.ProductRepository
+	// userRepo    repository.UserRepository
+	productRepo repository.ProductRepository
 }
 
 func NewProductHandler(repo repository.ProductRepository) *ProductHandler {
 	return &ProductHandler{
-		repo: repo,
+		productRepo: repo,
+		// userRepo:    user,
 	}
 }
 
 func (p *ProductHandler) RegisterRoutes(r *gin.Engine) {
-	r.POST("/product", p.CreateProduct)
-	r.GET("/product", p.ListProducts)
-	r.PUT("/product", p.UpdateProduct)
-	r.DELETE("/product", p.DeleteProduct)
+	productRoutes := r.Group("/product")
+	productRoutes.Use(auth.ProtectedEndpoint())
+
+	productRoutes.POST("/", p.CreateProduct)
+	productRoutes.GET("/", p.ListProducts)
+	productRoutes.PUT("/", p.UpdateProduct)
+	productRoutes.DELETE("/", p.DeleteProduct)
 }
 
 func (p *ProductHandler) CreateProduct(c *gin.Context) {
@@ -31,7 +37,7 @@ func (p *ProductHandler) CreateProduct(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	if _, err := p.repo.Create(&proto.ProductRequest{
+	if _, err := p.productRepo.Create(&proto.ProductRequest{
 		Payload: &payload,
 	}); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -48,7 +54,7 @@ func (u *ProductHandler) ListProducts(c *gin.Context) {
 		return
 	}
 
-	response, err := u.repo.ListProducts(&proto.Offset{Id: int32(page)})
+	response, err := u.productRepo.ListProducts(&proto.Offset{Id: int32(page)})
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -76,7 +82,7 @@ func (u *ProductHandler) UpdateProduct(c *gin.Context) {
 	}
 	product.Id = uint32(ID)
 
-	response, err := u.repo.UpdateProduct(&product)
+	response, err := u.productRepo.UpdateProduct(&product)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -89,7 +95,7 @@ func (u *ProductHandler) DeleteProduct(c *gin.Context) {
 	query := c.Query("id")
 	ID, err := strconv.Atoi(query)
 
-	_, err = u.repo.DeleteProduct(&proto.GetProductRequest{Id: int32(ID)})
+	_, err = u.productRepo.DeleteProduct(&proto.GetProductRequest{Id: int32(ID)})
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
