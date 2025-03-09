@@ -38,7 +38,9 @@ func Connect() (*sql.DB, error) {
 		DB.SetConnMaxLifetime(1 * time.Hour)
 		DB.SetConnMaxIdleTime(15 * time.Minute)
 
+		logrus.Info("Database connected successfully")
+
 		return DB, nil
 	}
-	return nil, fmt.Errorf("failed to connect to database")
+	return nil, fmt.Errorf("failed connect to database")
 }
