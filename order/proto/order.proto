@@ -24,7 +24,8 @@ message OrderItem {
 
 message CreateOrderRequest {
     int32 user_id = 1;
-    repeated OrderItemRequest items = 2;
+    double total_price = 2;
+    repeated OrderItemRequest items = 3;
 }
 
 message OrderItemRequest {

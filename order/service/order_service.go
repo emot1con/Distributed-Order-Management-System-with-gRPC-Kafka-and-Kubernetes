@@ -29,12 +29,7 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 	}
 	defer helper.CommitOrRollback(tx)
 
-	var totalPrice float64
-	for _, v := range payload.Items {
-		totalPrice += float64(v.Quantity) * v.Price
-	}
-
-	orderID, err := u.orderRepo.CreateOrder(payload, totalPrice, tx)
+	orderID, err := u.orderRepo.CreateOrder(payload, payload.TotalPrice, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +50,7 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 	return &proto.OrderResponse{
 		Order: &proto.Order{
 			Id:         int32(orderID),
-			TotalPrice: totalPrice,
+			TotalPrice: payload.TotalPrice,
 			CreatedAt:  time.Now().Format("2006-01-02 15:04:05"),
 			UpdatedAt:  time.Now().Format("2006-01-02 15:04:05"),
 		},

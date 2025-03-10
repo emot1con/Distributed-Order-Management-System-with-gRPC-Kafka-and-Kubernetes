@@ -34,6 +34,7 @@ func (u *OrderHandler) RegisterRoutes(r *gin.Engine) {
 }
 
 func (u *OrderHandler) CreateOrder(c *gin.Context) {
+	var totalPrices float64
 	userID, ok := c.Request.Context().Value(auth.UserKey).(int)
 	if !ok {
 		c.JSON(401, gin.H{"error": "User ID not found"})
@@ -53,20 +54,19 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 			return
 		}
 		if product.Stock < v.Quantity {
-			c.JSON(400, gin.H{"error": fmt.Sprintf("Product %s is out of stock", product.Name)})
+			c.JSON(400, gin.H{"error": fmt.Sprintf("Product %s is out of stock (product id: %v)", product.Name, v.ProductId)})
 			return
 		}
 
 		for i := range v.Quantity {
 			var totalPrice float64
-			totalPrice += float64(i+1) * product.Price
-			logrus.Infof("product price: %v", product.Price)
-			logrus.Infof("total price: %v", totalPrice)
-			logrus.Infof("order money: %v", v.Price)
+			totalPrice += float64(i+1-(i)) * product.Price
+			logrus.Infof("index %v", i+1-(i))
 			if v.Price < totalPrice {
 				c.JSON(400, gin.H{"error": fmt.Sprintf("Not enough money in %s products (product id: %v)", product.Name, v.ProductId)})
 				return
 			}
+			totalPrices += totalPrice
 		}
 
 		if _, err := u.productRepo.UpdateProduct(&proto.Product{
@@ -82,6 +82,8 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 			return
 		}
 	}
+	payload.TotalPrice = totalPrices
+	payload.UserId = int32(userID)
 
 	order, err := u.orderRepo.CreateOrder(&payload)
 	if err != nil {
