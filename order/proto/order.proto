@@ -46,6 +46,8 @@ message OrderResponse {
     Order order = 1;
 }
 
+message EmptyOrder {}
+
 service OrderService {
     rpc CreateOrder (CreateOrderRequest) returns (OrderResponse);
     rpc GetOrder (GetOrderRequest) returns (OrderResponse);

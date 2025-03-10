@@ -12,6 +12,7 @@ import (
 
 type ProductRepository interface {
 	Create(payload *proto.ProductRequest) (*proto.Empty, error)
+	GetProduct(payload *proto.GetProductRequest) (*proto.Product, error)
 	ListProducts(offset *proto.Offset) (*proto.ProductList, error)
 	UpdateProduct(payload *proto.Product) (*proto.Product, error)
 	DeleteProduct(ID *proto.GetProductRequest) (*proto.Empty, error)
@@ -37,6 +38,13 @@ func (u *ProductRepositoryImpl) Create(payload *proto.ProductRequest) (*proto.Em
 	defer cancel()
 
 	return u.client.CreateProduct(ctx, payload)
+}
+
+func (u *ProductRepositoryImpl) GetProduct(payload *proto.GetProductRequest) (*proto.Product, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return u.client.GetProduct(ctx, payload)
 }
 
 func (u *ProductRepositoryImpl) ListProducts(offset *proto.Offset) (*proto.ProductList, error) {

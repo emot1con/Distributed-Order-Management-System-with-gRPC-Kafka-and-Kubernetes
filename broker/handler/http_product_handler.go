@@ -10,14 +10,12 @@ import (
 )
 
 type ProductHandler struct {
-	// userRepo    repository.UserRepository
 	productRepo repository.ProductRepository
 }
 
 func NewProductHandler(repo repository.ProductRepository) *ProductHandler {
 	return &ProductHandler{
 		productRepo: repo,
-		// userRepo:    user,
 	}
 }
 
@@ -94,6 +92,10 @@ func (u *ProductHandler) UpdateProduct(c *gin.Context) {
 func (u *ProductHandler) DeleteProduct(c *gin.Context) {
 	query := c.Query("id")
 	ID, err := strconv.Atoi(query)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "InvalidID"})
+		return
+	}
 
 	_, err = u.productRepo.DeleteProduct(&proto.GetProductRequest{Id: int32(ID)})
 	if err != nil {

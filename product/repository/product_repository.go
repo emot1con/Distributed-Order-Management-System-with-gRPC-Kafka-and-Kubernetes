@@ -9,7 +9,7 @@ import (
 
 type ProductRepository interface {
 	Create(ctx context.Context, tx *sql.Tx, payload *proto.ProductPayload) error
-	GetProductByID(ctx context.Context, db *sql.DB, ID int) (*proto.Product, error)
+	GetProductByID(ctx context.Context, tx *sql.Tx, ID int) (*proto.Product, error)
 	GetAllProduct(ctx context.Context, db *sql.DB, offset int) ([]*proto.Product, int, int, error)
 	UpdateProduct(ctx context.Context, tx *sql.Tx, payload *proto.Product) error
 	DeleteProduct(ctx context.Context, tx *sql.Tx, ID int) error
@@ -29,9 +29,9 @@ func (u *ProductRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, payload 
 	return nil
 }
 
-func (u *ProductRepositoryImpl) GetProductByID(ctx context.Context, db *sql.DB, ID int) (*proto.Product, error) {
+func (u *ProductRepositoryImpl) GetProductByID(ctx context.Context, tx *sql.Tx, ID int) (*proto.Product, error) {
 	SQL := "SELECT id, name, description, price, stock, created_at, updated_at FROM products WHERE id = $1"
-	rows := db.QueryRowContext(ctx, SQL, ID)
+	rows := tx.QueryRowContext(ctx, SQL, ID)
 
 	productResponse := &proto.Product{}
 	if err := rows.Scan(

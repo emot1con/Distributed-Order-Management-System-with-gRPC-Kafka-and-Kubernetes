@@ -39,6 +39,16 @@ func (u *ProductService) Create(payload *proto.ProductRequest) error {
 	return nil
 }
 
+func (u *ProductService) GetUserByID(ID int) (*proto.Product, error) {
+	tx, err := u.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer helper.CommitOrRollback(tx)
+	logrus.Info("getting product")
+	return u.repo.GetProductByID(u.ctx, tx, ID)
+}
+
 func (u *ProductService) Update(payload *proto.Product) (*proto.Product, error) {
 	tx, err := u.DB.Begin()
 	if err != nil {
@@ -47,7 +57,7 @@ func (u *ProductService) Update(payload *proto.Product) (*proto.Product, error) 
 	defer helper.CommitOrRollback(tx)
 
 	logrus.Info("getting product")
-	productResult, err := u.repo.GetProductByID(u.ctx, u.DB, int(payload.Id))
+	productResult, err := u.repo.GetProductByID(u.ctx, tx, int(payload.Id))
 	if err != nil {
 		return nil, err
 	}

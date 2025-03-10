@@ -33,6 +33,15 @@ func (u *ProductGRPCServer) CreateProduct(ctx context.Context, req *proto.Produc
 	return nil, nil
 }
 
+func (u *ProductGRPCServer) GetProduct(ctx context.Context, req *proto.GetProductRequest) (*proto.Product, error) {
+	product, err := u.service.GetUserByID(int(req.Id))
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
+}
+
 func (u *ProductGRPCServer) ListProducts(ctx context.Context, req *proto.Offset) (*proto.ProductList, error) {
 	products, totalProducts, totalPages, page, err := u.service.GetAll(int(req.Id))
 	if err != nil {

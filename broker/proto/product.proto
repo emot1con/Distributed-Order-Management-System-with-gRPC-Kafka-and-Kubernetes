@@ -27,6 +27,7 @@ message ProductPayload {
 
 service ProductService {
   rpc CreateProduct(ProductRequest) returns (Empty);
+  rpc GetProduct(GetProductRequest) returns (Product);
   rpc ListProducts(Offset) returns (ProductList);
   rpc UpdateProduct(Product) returns (Product);
   rpc DeleteProduct(GetProductRequest) returns (Empty);

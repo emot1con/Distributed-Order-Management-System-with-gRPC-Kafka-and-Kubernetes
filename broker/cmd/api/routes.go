@@ -18,5 +18,9 @@ func Routes() *gin.Engine {
 	productHandler := handler.NewProductHandler(productRepo)
 	productHandler.RegisterRoutes(r)
 
+	orderRepo := repository.NewOrderRepository()
+	orderHandler := handler.NewOrderHandler(userRepo, productRepo, orderRepo)
+	orderHandler.RegisterRoutes(r)
+
 	return r
 }
