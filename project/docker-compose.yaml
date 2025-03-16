@@ -1,3 +1,7 @@
+networks:
+  app-tier:
+    driver: bridge
+
 services:
   broker_service:
     container_name: broker_service
@@ -9,9 +13,12 @@ services:
     restart: always
     depends_on:
       - user_service
+      - kafka
     env_file:
       - ../broker/.env
-
+    networks:
+      - app-tier  
+  
   user_service:
     container_name: user_service
     build:
@@ -24,6 +31,8 @@ services:
       - postgres
     env_file:
       - ../user/.env
+    networks:
+      - app-tier
 
   product_service:
     container_name: product_service
@@ -37,6 +46,8 @@ services:
       - postgres
     env_file:
       - ../product/.env
+    networks:
+      - app-tier
 
   order_service:
     container_name: order_service
@@ -50,7 +61,9 @@ services:
       - postgres
     env_file:
       - ../order/.env
-  
+    networks:
+      - app-tier
+
   postgres:
     container_name: postgres
     image: postgres:13
@@ -61,6 +74,33 @@ services:
       - postgres_data:/var/lib/postgresql/data
     env_file:
       - ../user/.env
+    networks:
+      - app-tier
+
+  kafka:
+    image: 'bitnami/kafka:latest'
+    container_name: kafka
+    networks:
+      - app-tier
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    container_name: zookeeper
+    networks:
+      - app-tier
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
 
 volumes:
   postgres_data:

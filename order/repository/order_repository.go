@@ -18,9 +18,9 @@ func NewOrderRepositoryImpl() *OrderRepositoryImpl {
 }
 
 func (u *OrderRepositoryImpl) CreateOrder(payload *proto.CreateOrderRequest, price float64, tx *sql.Tx) (int, error) {
-	SQL := "INSERT INTO orders(user_id, total_price) VALUES ($1, $2) RETURNING id"
+	SQL := "INSERT INTO orders(user_id, total_price, status) VALUES ($1, $2, $3) RETURNING id"
 	var orderID int
-	err := tx.QueryRow(SQL, payload.UserId, price).Scan(&orderID)
+	err := tx.QueryRow(SQL, payload.UserId, price, "pending").Scan(&orderID)
 	if err != nil {
 		return 0, err
 	}
@@ -28,13 +28,14 @@ func (u *OrderRepositoryImpl) CreateOrder(payload *proto.CreateOrderRequest, pri
 }
 
 func (u *OrderRepositoryImpl) GetOrderByID(payload *proto.GetOrderRequest, db *sql.DB) (*proto.Order, error) {
-	SQL := "SELECT id, user_id, total_price, created_at, updated_at FROM orders WHERE id = $1"
+	SQL := "SELECT id, user_id, status, total_price, created_at, updated_at FROM orders WHERE id = $1"
 	rows := db.QueryRow(SQL, payload.OrderId)
 
 	orderResponse := &proto.Order{}
 	if err := rows.Scan(
 		&orderResponse.Id,
 		&orderResponse.UserId,
+		&orderResponse.Status,
 		&orderResponse.TotalPrice,
 		&orderResponse.CreatedAt,
 		&orderResponse.UpdatedAt,

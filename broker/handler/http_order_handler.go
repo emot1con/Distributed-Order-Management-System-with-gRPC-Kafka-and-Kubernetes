@@ -4,7 +4,9 @@ import (
 	"broker/auth"
 	"broker/proto"
 	"broker/repository"
+	"broker/transport/kafka"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -61,7 +63,6 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 		for i := range v.Quantity {
 			var totalPrice float64
 			totalPrice += float64(i+1-(i)) * product.Price
-			logrus.Infof("index %v", i+1-(i))
 			if v.Price < totalPrice {
 				c.JSON(400, gin.H{"error": fmt.Sprintf("Not enough money in %s products (product id: %v)", product.Name, v.ProductId)})
 				return
@@ -91,10 +92,28 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
+	addr := []string{os.Getenv("KAFKA_BROKER_URL")}
+	topic := os.Getenv("KAFKA_ORDER_TOPIC")
+	logrus.Printf("address: %s", addr)
+
+	partition, offset, err := kafka.SendMessage(addr, "order-topic", &proto.Order{
+		Id:         order.Order.Id,
+		UserId:     int32(userID),
+		Status:     "Pending",
+		TotalPrice: order.Order.TotalPrice,
+		OrderItems: order.Order.OrderItems,
+	})
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	logrus.Infof("Message sent to topic: %s partition: %d, offset: %d", topic, partition, offset)
+
 	orderResponse := &proto.OrderResponse{
 		Order: &proto.Order{
 			Id:         order.Order.Id,
 			UserId:     int32(userID),
+			Status:     "Pending",
 			TotalPrice: order.Order.TotalPrice,
 			CreatedAt:  order.Order.CreatedAt,
 			UpdatedAt:  order.Order.CreatedAt,
