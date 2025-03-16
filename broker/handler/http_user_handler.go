@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/time/rate"
 )
 
 type UserHandler struct {
@@ -57,7 +58,17 @@ func (u *UserHandler) Register(c *gin.Context) {
 	})
 }
 
+var limiter = rate.NewLimiter(2, 5)
+
 func (u *UserHandler) Login(c *gin.Context) {
+	if !limiter.Allow() {
+		c.JSON(429, gin.H{"error": "Too many requests"})
+		logrus.Errorf("Too many requests")
+		c.Abort()
+		return
+	}
+	c.Next()
+
 	var loginPayload proto.LoginPayload
 	if err := c.ShouldBindJSON(&loginPayload); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
