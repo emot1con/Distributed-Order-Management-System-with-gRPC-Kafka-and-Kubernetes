@@ -25,6 +25,7 @@ func NewOrderGRPCServer(service *service.OrderService) *OrderGRPCServer {
 
 func (u *OrderGRPCServer) CreateOrder(ctx context.Context, req *proto.CreateOrderRequest) (*proto.OrderResponse, error) {
 	logrus.Info("create order")
+
 	order, err := u.service.CreateOrder(req)
 	if err != nil {
 		return nil, err
@@ -52,8 +53,9 @@ func GRPCListen() {
 
 	orderRepo := repository.NewOrderRepositoryImpl()
 	orderItemRepo := repository.NewOrderItemsRepositoryImpl()
+	productRepo := repository.NewProductRepositoryImpl()
 
-	orderService := service.NewOrderItemService(DB, orderRepo, orderItemRepo)
+	orderService := service.NewOrderItemService(DB, orderRepo, orderItemRepo, productRepo)
 	orderGRPC := NewOrderGRPCServer(orderService)
 
 	conn, err := net.Listen("tcp", ":30001")

@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "../proto";
+
+message Product {
+  uint32 id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  int32 stock = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+message ProductRequest{
+    ProductPayload payload = 1;
+}
+
+message ProductPayload {
+  string name = 1;
+  string description = 2;
+  double price = 3;
+  int32 stock = 4;
+}
+
+service ProductService {
+  rpc CreateProduct(ProductRequest) returns (Empty);
+  rpc GetProduct(GetProductRequest) returns (Product);
+  rpc ListProducts(Offset) returns (ProductList);
+  rpc UpdateProduct(Product) returns (Product);
+  rpc DeleteProduct(GetProductRequest) returns (Empty);
+}
+
+message GetProductRequest {
+  int32 id = 1;
+}
+
+message Offset {
+  int32 id = 1;
+}
+
+message ProductList {
+  int64 total = 1;
+  int32 page = 2;
+  int32 total_page = 3;
+  repeated Product products = 4;
+}
+
+message Empty {}

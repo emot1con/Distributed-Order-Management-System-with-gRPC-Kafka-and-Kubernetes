@@ -4,13 +4,9 @@ import (
 	"broker/auth"
 	"broker/proto"
 	"broker/repository"
-	"broker/transport/kafka"
-	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 type OrderHandler struct {
@@ -36,7 +32,6 @@ func (u *OrderHandler) RegisterRoutes(r *gin.Engine) {
 }
 
 func (u *OrderHandler) CreateOrder(c *gin.Context) {
-	var totalPrices float64
 	userID, ok := c.Request.Context().Value(auth.UserKey).(int)
 	if !ok {
 		c.JSON(401, gin.H{"error": "User ID not found"})
@@ -48,42 +43,6 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-
-	for _, v := range payload.Items {
-		product, err := u.productRepo.GetProduct(&proto.GetProductRequest{Id: v.ProductId})
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Product not found"})
-			return
-		}
-		if product.Stock < v.Quantity {
-			c.JSON(400, gin.H{"error": fmt.Sprintf("Product %s is out of stock (product id: %v)", product.Name, v.ProductId)})
-			return
-		}
-
-		for i := range v.Quantity {
-			var totalPrice float64
-			totalPrice += float64(i+1-(i)) * product.Price
-			if v.Price < totalPrice {
-				c.JSON(400, gin.H{"error": fmt.Sprintf("Not enough money in %s products (product id: %v)", product.Name, v.ProductId)})
-				return
-			}
-			totalPrices += totalPrice
-		}
-
-		if _, err := u.productRepo.UpdateProduct(&proto.Product{
-			Id:          product.Id,
-			Name:        product.Name,
-			Description: product.Description,
-			Price:       product.Price,
-			Stock:       product.Stock - v.Quantity,
-			CreatedAt:   product.CreatedAt,
-			UpdatedAt:   product.UpdatedAt,
-		}); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-	}
-	payload.TotalPrice = totalPrices
 	payload.UserId = int32(userID)
 
 	order, err := u.orderRepo.CreateOrder(&payload)
@@ -91,23 +50,6 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-
-	addr := []string{os.Getenv("KAFKA_BROKER_URL")}
-	topic := os.Getenv("KAFKA_ORDER_TOPIC")
-	logrus.Printf("address: %s", addr)
-
-	partition, offset, err := kafka.SendMessage(addr, "order-topic", &proto.Order{
-		Id:         order.Order.Id,
-		UserId:     int32(userID),
-		Status:     "Pending",
-		TotalPrice: order.Order.TotalPrice,
-		OrderItems: order.Order.OrderItems,
-	})
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	logrus.Infof("Message sent to topic: %s partition: %d, offset: %d", topic, partition, offset)
 
 	orderResponse := &proto.OrderResponse{
 		Order: &proto.Order{
@@ -117,7 +59,6 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 			TotalPrice: order.Order.TotalPrice,
 			CreatedAt:  order.Order.CreatedAt,
 			UpdatedAt:  order.Order.CreatedAt,
-			OrderItems: order.Order.OrderItems,
 		},
 	}
 

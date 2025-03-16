@@ -2,38 +2,83 @@ package service
 
 import (
 	"database/sql"
+	"errors"
 	"order/helper"
 	"order/proto"
 	"order/repository"
+	"order/transport/kafka"
+	"os"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type OrderService struct {
 	DB            *sql.DB
 	orderRepo     repository.OrderRepository
 	orderItemRepo repository.OrderItemsRepository
+	productRepo   repository.ProductRepository
 }
 
-func NewOrderItemService(DB *sql.DB, orderRepo repository.OrderRepository, orderItemRepo repository.OrderItemsRepository) *OrderService {
+func NewOrderItemService(DB *sql.DB, orderRepo repository.OrderRepository, orderItemRepo repository.OrderItemsRepository, productRepo repository.ProductRepository) *OrderService {
 	return &OrderService{
 		DB:            DB,
 		orderRepo:     orderRepo,
 		orderItemRepo: orderItemRepo,
+		productRepo:   productRepo,
 	}
 }
 
 func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.OrderResponse, error) {
+	var totalPrices float64
+
+	addr := []string{os.Getenv("KAFKA_BROKER_URL")}
+	topic := os.Getenv("KAFKA_ORDER_TOPIC")
+
+	var products []*proto.Product
+
+	logrus.Info("Calculating total price")
+	for _, v := range payload.Items {
+		product, err := u.productRepo.GetProduct(&proto.GetProductRequest{Id: v.ProductId})
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, product)
+
+		if product.Stock < v.Quantity {
+			return nil, errors.New("stock is not enough")
+		}
+
+		// for i := range v.Quantity {
+		// 	var totalPrice float64
+		// 	totalPrice += float64(i+1-(i)) * product.Price
+		// 	if v.Price < totalPrice {
+		// 		return nil, errors.New("money is not enough")
+		// 	}
+		// 	totalPrices += totalPrice
+		// }
+		totalPrice := float64(v.Quantity) * product.Price
+		if v.Price < totalPrice {
+			return nil, errors.New("money is not enough")
+		}
+		totalPrices += totalPrice
+
+	}
+	payload.TotalPrice = totalPrices
+
 	tx, err := u.DB.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer helper.CommitOrRollback(tx)
 
+	logrus.Info("Create order")
 	orderID, err := u.orderRepo.CreateOrder(payload, payload.TotalPrice, tx)
 	if err != nil {
 		return nil, err
 	}
 
+	logrus.Info("Saving order items")
 	for _, v := range payload.Items {
 		orderItemPayload := &proto.OrderItemRequest{
 			OrderId:   int32(orderID),
@@ -46,6 +91,33 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 			return nil, err
 		}
 	}
+
+	logrus.Info("Updating products")
+	for i, v := range payload.Items {
+		if _, err := u.productRepo.UpdateProduct(&proto.Product{
+			Id:          products[i].Id,
+			Name:        products[i].Name,
+			Description: products[i].Description,
+			Price:       products[i].Price,
+			Stock:       products[i].Stock - v.Quantity,
+			CreatedAt:   products[i].CreatedAt,
+			UpdatedAt:   products[i].UpdatedAt,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	logrus.Info("Sending message to kafka")
+	partition, offset, err := kafka.SendMessage(addr, topic, &proto.Order{
+		Id:         int32(orderID),
+		UserId:     payload.UserId,
+		Status:     "Pending",
+		TotalPrice: payload.TotalPrice,
+	})
+	if err != nil {
+		return nil, err
+	}
+	logrus.Infof("Message sent to topic: %s partition: %d, offset: %d", topic, partition, offset)
 
 	return &proto.OrderResponse{
 		Order: &proto.Order{
