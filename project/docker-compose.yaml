@@ -64,6 +64,23 @@ services:
     networks:
       - app-tier
 
+  payment_service:
+    container_name: payment_service
+    build:
+      context: ../payment
+      dockerfile: ../payment/Dockerfile
+    ports:
+      - "60001:60001"
+    restart: always
+    depends_on:
+      - postgres
+      - kafka
+      - zookeeper
+    env_file:
+      - ../payment/.env
+    networks:
+      - app-tier
+
   postgres:
     container_name: postgres
     image: postgres:13

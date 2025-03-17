@@ -3,6 +3,7 @@ BROKER_BINARY=brokerApp
 USER_BINARY=userApp
 PRODUCT_BINARY=productApp
 ORDER_BINARY=orderApp
+PAYMENT_BINARY=paymentApp
 
 ## up: starts all containers in the background without forcing build
 up:
@@ -11,7 +12,7 @@ up:
 	@echo Docker images started!
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_user build_broker build_product build_order
+up_build: build_user build_broker build_product build_order build_payment
 	@echo Stopping docker images (if running...)
 	docker-compose down
 	@echo Building (when required) and starting docker images...
@@ -46,6 +47,12 @@ build_product:
 build_order:
 	@echo Building order binary...
 	chdir ..\order && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${ORDER_BINARY} ./cmd/app
+	@echo Done!
+
+## build_payment: builds the payment binary as a linux executable
+build_payment:
+	@echo Building payment binary...
+	chdir ..\payment && set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o ${PAYMENT_BINARY} ./cmd/app
 	@echo Done!
 
 ## stop: stop the front end
