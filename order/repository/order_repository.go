@@ -9,6 +9,7 @@ import (
 type OrderRepository interface {
 	CreateOrder(payload *proto.CreateOrderRequest, price float64, tx *sql.Tx) (int, error)
 	GetOrderByID(payload *proto.GetOrderRequest, db *sql.DB) (*proto.Order, error)
+	UpdateOrderStatus(status string, orderID int, tx *sql.Tx) error
 }
 
 type OrderRepositoryImpl struct{}
@@ -43,4 +44,12 @@ func (u *OrderRepositoryImpl) GetOrderByID(payload *proto.GetOrderRequest, db *s
 		return nil, errors.New("order not found")
 	}
 	return orderResponse, nil
+}
+
+func (u *OrderRepositoryImpl) UpdateOrderStatus(status string, orderID int, tx *sql.Tx) error {
+	SQL := `UPDATE orders SET status = $1 WHERE id = $2`
+	if _, err := tx.Exec(SQL, status, orderID); err != nil {
+		return err
+	}
+	return nil
 }

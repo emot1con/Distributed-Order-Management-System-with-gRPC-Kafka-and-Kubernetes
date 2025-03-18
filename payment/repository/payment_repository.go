@@ -8,7 +8,7 @@ import (
 )
 
 type PaymentRepository interface {
-	CreatePayment(ctx context.Context, payload *proto.CreatePaymentRequest, tx *sql.Tx) error
+	CreatePayment(payload *proto.CreatePaymentRequest, tx *sql.Tx) (int, error)
 	UpdatePayment(ctx context.Context, status string, ID int, tx *sql.Tx) error
 	GetByID(ctx context.Context, ID int, tx *sql.Tx) (*proto.OrderPayment, error)
 	DeletePayment(ctx context.Context, ID int, tx *sql.Tx) error
@@ -20,13 +20,14 @@ func NewPaymentRepository() *PaymentRepositoryImpl {
 	return &PaymentRepositoryImpl{}
 }
 
-func (u *PaymentRepositoryImpl) CreatePayment(ctx context.Context, payload *proto.CreatePaymentRequest, tx *sql.Tx) error {
-	SQL := "INSERT INTO payments(order_id, user_id, total_price) VALUES ($1, $2, $3)"
-	if _, err := tx.ExecContext(ctx, SQL, payload.OrderId, payload.UserId, payload.TotalPrice); err != nil {
-		return err
+func (u *PaymentRepositoryImpl) CreatePayment(payload *proto.CreatePaymentRequest, tx *sql.Tx) (int, error) {
+	var paymentID int
+	SQL := "INSERT INTO payments(order_id, user_id, total_price) VALUES ($1, $2, $3) returning id"
+	if err := tx.QueryRow(SQL, payload.OrderId, payload.UserId, payload.TotalPrice).Scan(&paymentID); err != nil {
+		return 0, err
 	}
 
-	return nil
+	return paymentID, nil
 }
 
 func (u *PaymentRepositoryImpl) UpdatePayment(ctx context.Context, status string, ID int, tx *sql.Tx) error {
@@ -39,7 +40,7 @@ func (u *PaymentRepositoryImpl) UpdatePayment(ctx context.Context, status string
 }
 
 func (u PaymentRepositoryImpl) GetByID(ctx context.Context, ID int, tx *sql.Tx) (*proto.OrderPayment, error) {
-	SQL := "SELECT id, orderid, user_id, status, total_price, created_at, updated_at FROM payments WHERE id = $1"
+	SQL := "SELECT id, order_id, user_id, status, total_price, created_at, updated_at FROM payments WHERE id = $1"
 	rows := tx.QueryRowContext(ctx, SQL, ID)
 
 	orderPayment := &proto.OrderPayment{}

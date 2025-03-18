@@ -45,6 +45,14 @@ func (u *OrderGRPCServer) GetOrder(ctx context.Context, req *proto.GetOrderReque
 	}, nil
 }
 
+func (u *OrderGRPCServer) UpdateOrderStatus(ctx context.Context, req *proto.UpdateOrderStatusRequest) (*proto.EmptyOrder, error) {
+	if err := u.service.UpdateOrderStatus(req.Status, int(req.OrderId)); err != nil {
+		return nil, err
+	}
+
+	return &proto.EmptyOrder{}, nil
+}
+
 func GRPCListen() {
 	DB, err := db.Connect()
 	if err != nil {

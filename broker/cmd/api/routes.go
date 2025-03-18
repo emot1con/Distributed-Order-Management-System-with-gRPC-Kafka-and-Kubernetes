@@ -22,5 +22,9 @@ func Routes() *gin.Engine {
 	orderHandler := handler.NewOrderHandler(userRepo, productRepo, orderRepo)
 	orderHandler.RegisterRoutes(r)
 
+	paymentRepo := repository.NewPaymentRepository()
+	paymentHandler := handler.NewPaymentHandler(paymentRepo)
+	paymentHandler.RegisterRoutes(r)
+
 	return r
 }

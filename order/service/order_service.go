@@ -48,15 +48,6 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 		if product.Stock < v.Quantity {
 			return nil, errors.New("stock is not enough")
 		}
-
-		// for i := range v.Quantity {
-		// 	var totalPrice float64
-		// 	totalPrice += float64(i+1-(i)) * product.Price
-		// 	if v.Price < totalPrice {
-		// 		return nil, errors.New("money is not enough")
-		// 	}
-		// 	totalPrices += totalPrice
-		// }
 		totalPrice := float64(v.Quantity) * product.Price
 		if v.Price < totalPrice {
 			return nil, errors.New("money is not enough")
@@ -135,4 +126,17 @@ func (u *OrderService) GetOrderByID(payload *proto.GetOrderRequest) (*proto.Orde
 		return nil, err
 	}
 	return orderResponse, nil
+}
+
+func (u *OrderService) UpdateOrderStatus(status string, orderID int) error {
+	tx, err := u.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer helper.CommitOrRollback(tx)
+
+	if err := u.orderRepo.UpdateOrderStatus(status, orderID, tx); err != nil {
+		return err
+	}
+	return nil
 }

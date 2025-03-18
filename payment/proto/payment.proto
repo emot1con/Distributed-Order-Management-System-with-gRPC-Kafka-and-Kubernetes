@@ -21,8 +21,14 @@ message CreatePaymentRequest {
   double total_price = 4;
 }
 
+message PaymentTransaction {
+  int32 payment_id = 1;
+  double money = 2;
+}
+
 message EmptyPayment {}
 
 service PaymentService {
-    rpc PayOrder (CreatePaymentRequest) returns (EmptyPayment);
+    rpc PayOrder (CreatePaymentRequest) returns (OrderPayment);
+    rpc Transaction (PaymentTransaction) returns (EmptyPayment);
 }
