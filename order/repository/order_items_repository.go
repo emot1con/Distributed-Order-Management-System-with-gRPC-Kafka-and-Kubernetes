@@ -17,8 +17,8 @@ func NewOrderItemsRepositoryImpl() *OrderItemsRepositoryImpl {
 }
 
 func (u *OrderItemsRepositoryImpl) CreateOrderItems(payload *proto.OrderItemRequest, tx *sql.Tx) error {
-	SQL := "INSERT INTO order_items(order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)"
-	if _, err := tx.Exec(SQL, payload.OrderId, payload.ProductId, payload.Quantity, payload.Price); err != nil {
+	SQL := "INSERT INTO order_items(order_id, product_id, quantity) VALUES ($1, $2, $3)"
+	if _, err := tx.Exec(SQL, payload.OrderId, payload.ProductId, payload.Quantity); err != nil {
 		return err
 	}
 

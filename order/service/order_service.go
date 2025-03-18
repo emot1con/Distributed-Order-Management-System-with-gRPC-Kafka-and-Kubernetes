@@ -49,11 +49,7 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 			return nil, errors.New("stock is not enough")
 		}
 		totalPrice := float64(v.Quantity) * product.Price
-		if v.Price < totalPrice {
-			return nil, errors.New("money is not enough")
-		}
 		totalPrices += totalPrice
-
 	}
 	payload.TotalPrice = totalPrices
 
@@ -75,7 +71,6 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 			OrderId:   int32(orderID),
 			ProductId: v.ProductId,
 			Quantity:  v.Quantity,
-			Price:     v.Price,
 		}
 		err := u.orderItemRepo.CreateOrderItems(orderItemPayload, tx)
 		if err != nil {

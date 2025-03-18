@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"order/proto"
+	"time"
 )
 
 type OrderRepository interface {
@@ -47,8 +48,10 @@ func (u *OrderRepositoryImpl) GetOrderByID(payload *proto.GetOrderRequest, db *s
 }
 
 func (u *OrderRepositoryImpl) UpdateOrderStatus(status string, orderID int, tx *sql.Tx) error {
-	SQL := `UPDATE orders SET status = $1 WHERE id = $2`
-	if _, err := tx.Exec(SQL, status, orderID); err != nil {
+	loc := time.FixedZone("WIB", 7*60*60)
+	SQL := `UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3`
+	now := time.Now().In(loc)
+	if _, err := tx.Exec(SQL, status, now, orderID); err != nil {
 		return err
 	}
 	return nil
