@@ -31,8 +31,8 @@ func NewOrderRepository() *OrderRepositoryImpl {
 }
 
 func (u *OrderRepositoryImpl) UpdateOrderStatus(ctx context.Context, payload *proto.UpdateOrderStatusRequest) (*proto.EmptyOrder, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctxRepo, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	return u.client.UpdateOrderStatus(ctx, payload)
+	return u.client.UpdateOrderStatus(ctxRepo, payload)
 }
