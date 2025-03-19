@@ -43,7 +43,6 @@ func (u *PaymentService) AddPayment(payment *proto.CreatePaymentRequest) (*proto
 		logrus.Errorf("error when create payment: %v", err)
 		return nil, err
 	}
-	logrus.Info("success payment")
 
 	return &proto.OrderPayment{
 		Id:         int32(paymentID),
