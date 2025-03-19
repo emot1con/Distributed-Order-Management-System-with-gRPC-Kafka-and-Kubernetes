@@ -12,9 +12,10 @@ func main() {
 	logrus.Info("Starting Payment Application")
 
 	addr := []string{os.Getenv("KAFKA_BROKER_URL")}
-	topic := os.Getenv("KAFKA_ORDER_TOPIC")
+	topic := []string{os.Getenv("KAFKA_ORDER_TOPIC")}
+	groupID := os.Getenv("KAFKA_GROUP_ID")
 
-	go grpc.GRPCListen(addr, topic)
+	go grpc.GRPCListen(addr, topic, groupID)
 
 	logrus.Info("Application started")
 	select {}

@@ -7,6 +7,8 @@ import (
 	"order/proto"
 	"order/repository"
 	"order/service"
+	"order/transport/kafka"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -59,12 +61,18 @@ func GRPCListen() {
 		logrus.Fatalf("failed to connect to database: %v", err)
 	}
 
+	addr := []string{os.Getenv("KAFKA_BROKER_URL")}
+
 	orderRepo := repository.NewOrderRepositoryImpl()
 	orderItemRepo := repository.NewOrderItemsRepositoryImpl()
 	productRepo := repository.NewProductRepositoryImpl()
 
 	orderService := service.NewOrderItemService(DB, orderRepo, orderItemRepo, productRepo)
 	orderGRPC := NewOrderGRPCServer(orderService)
+
+	if err := kafka.ConnectProducer(addr); err != nil {
+		logrus.Fatalf("failed to connect to kafka: %v", err)
+	}
 
 	conn, err := net.Listen("tcp", ":30001")
 	if err != nil {

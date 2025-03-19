@@ -1,8 +1,8 @@
 package kafka
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"os"
 	"os/signal"
 	"payment/proto"
@@ -14,74 +14,96 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func connectKafka(addr []string) (sarama.Consumer, error) {
+type ConsumerHandler struct {
+	service *service.PaymentService
+}
+
+func connectKafka(addr []string, groupID string) (sarama.ConsumerGroup, error) {
 	config := sarama.NewConfig()
+	config.Consumer.Group.Rebalance.Strategy = sarama.NewBalanceStrategyRange()
+	config.Consumer.Offsets.Initial = sarama.OffsetOldest
 	config.Consumer.Return.Errors = true
 
+	var CGError error
+
 	for i := 0; i < 5; i++ {
-		worker, err := sarama.NewConsumer(addr, config)
+		worker, err := sarama.NewConsumerGroup(addr, groupID, config)
 		if err == nil {
 			logrus.Info("Connected to kafka")
 			return worker, nil
 		}
+
+		CGError = err
 		logrus.Warnf("failed connect to kafka, retrying...(%d/5)", i+1)
 		time.Sleep(5 * time.Second)
 		continue
 	}
 
-	return nil, errors.New("failed to connect to kafka")
+	return nil, CGError
 }
 
-func ProcessMessage(addr []string, topic string, service *service.PaymentService) {
+func ProcessMessage(addr []string, topic []string, groupID string, service *service.PaymentService) {
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
-	msgCnt := 0
 
-	donech := make(chan struct{})
-
-	worker, err := connectKafka(addr)
+	consumerGroup, err := connectKafka(addr, groupID)
 	if err != nil {
 		logrus.Fatalf("error when connect to kafka: %v", err)
 	}
 
-	defer worker.Close()
+	defer consumerGroup.Close()
 
-	consumer, err := worker.ConsumePartition(topic, 0, sarama.OffsetNewest)
-	if err != nil {
-		logrus.Fatalf("error when consume partition: %v", err)
-	}
-	defer consumer.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	order := new(proto.Order)
+	handler := &ConsumerHandler{service: service}
+
 	go func() {
+		logrus.Infof("addr: %s topic: %s groupID: %s", addr, topic, groupID)
 		for {
 			select {
-			case msg := <-consumer.Messages():
-				if err := json.Unmarshal(msg.Value, &order); err != nil {
-					logrus.Errorf("Error parsing message: %s. Raw data: %s", err, string(msg.Value))
-					continue
-				}
-				msgCnt++
-				logrus.Infof("Received message, UserID: %d with OrderId: %d \n", order.UserId, order.Id)
-				response, err := service.AddPayment(&proto.CreatePaymentRequest{
-					OrderId:    order.Id,
-					UserId:     order.UserId,
-					TotalPrice: order.TotalPrice,
-				})
-				if err != nil {
-					logrus.Error(err)
-					continue
-				}
-				logrus.Infof("Payment created with ID: %d\n", response.Id)
-			case err := <-consumer.Errors():
-				logrus.Error(err)
-			case <-sigchan:
-				logrus.Info("Consumer stopped")
-				donech <- struct{}{}
+			case <-ctx.Done():
+				logrus.Info("Consumer stopping...")
 				return
+			default:
+				if err := consumerGroup.Consume(ctx, topic, handler); err != nil {
+					logrus.Errorf("failed when consume partition, retrying: %v", err)
+					time.Sleep(2 * time.Second)
+				}
 			}
 		}
 	}()
-	<-donech
-	logrus.Infof("Processed %d messages\n", msgCnt)
+
+	<-sigchan
+	logrus.Info("shutting down consumer...")
+	cancel()
+}
+
+func (h *ConsumerHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
+func (h *ConsumerHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
+
+func (h *ConsumerHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	for msg := range claim.Messages() {
+		order := new(proto.Order)
+		if err := json.Unmarshal(msg.Value, &order); err != nil {
+			logrus.Errorf("Error parsing message: %s. Raw data: %s", err, string(msg.Value))
+			continue
+		}
+		logrus.Infof("Received message, UserID: %d with OrderId: %d \n", order.UserId, order.Id)
+		response, err := h.service.AddPayment(&proto.CreatePaymentRequest{
+			OrderId:    order.Id,
+			UserId:     order.UserId,
+			TotalPrice: order.TotalPrice,
+		})
+		if err != nil {
+			logrus.Errorf("Error creating payment: %v", err)
+			continue
+		}
+
+		logrus.Infof("Payment created with ID: %d", response.Id)
+
+		sess.MarkMessage(msg, "")
+	}
+
+	return nil
 }

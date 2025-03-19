@@ -2,24 +2,35 @@ package kafka
 
 import (
 	"encoding/json"
+	"errors"
 	"order/proto"
 
 	"github.com/IBM/sarama"
+	"github.com/sirupsen/logrus"
 )
 
-func ConnectProducer(addr []string) (sarama.SyncProducer, error) {
+var producer sarama.SyncProducer
+
+func ConnectProducer(addr []string) error {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 5
 	config.Producer.Return.Successes = true
 
-	return sarama.NewSyncProducer(addr, config)
+	p, err := sarama.NewSyncProducer(addr, config)
+	if err != nil {
+		return err
+	}
+	producer = p
+
+	logrus.Info("success connect producer")
+
+	return nil
 }
 
 func SendMessage(addr []string, topic string, msg *proto.Order) (int32, int64, error) {
-	producer, err := ConnectProducer(addr)
-	if err != nil {
-		return 0, 0, err
+	if producer == nil {
+		return 0, 0, errors.New("kafka producer is not initialized")
 	}
 
 	data, err := json.Marshal(msg)

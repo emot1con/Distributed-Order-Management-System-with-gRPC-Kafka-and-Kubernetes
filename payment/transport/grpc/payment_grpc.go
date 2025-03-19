@@ -41,17 +41,17 @@ func (u *PaymentGRPCServer) Transaction(ctx context.Context, req *proto.PaymentT
 	return &proto.EmptyPayment{}, nil
 }
 
-func GRPCListen(addr []string, topic string) {
+func GRPCListen(addr []string, topic []string, groupID string) {
 	DB, err := db.Connect()
+	if err != nil {
+		logrus.Fatalf("failed to connect to database: %v", err)
+	}
+
 	ctx := context.Background()
 	paymentRepo := repository.NewPaymentRepository()
 	orderRepo := repository.NewOrderRepository()
 	service := service.NewPaymentService(paymentRepo, DB, ctx, orderRepo)
 	connection := NewPaymentGRPCServer(service)
-
-	if err != nil {
-		logrus.Fatalf("failed to connect to database: %v", err)
-	}
 
 	lis, err := net.Listen("tcp", ":60001")
 	if err != nil {
@@ -67,5 +67,5 @@ func GRPCListen(addr []string, topic string) {
 			logrus.Fatalf("error when connect to gRPC Server: %v", err)
 		}
 	}()
-	go kafka.ProcessMessage(addr, topic, service)
+	go kafka.ProcessMessage(addr, topic, groupID, service)
 }
