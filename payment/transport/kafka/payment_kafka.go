@@ -15,11 +15,11 @@ import (
 )
 
 func connectKafka(addr []string) (sarama.Consumer, error) {
-	topic := sarama.NewConfig()
-	topic.Consumer.Return.Errors = true
+	config := sarama.NewConfig()
+	config.Consumer.Return.Errors = true
 
 	for i := 0; i < 5; i++ {
-		worker, err := sarama.NewConsumer(addr, topic)
+		worker, err := sarama.NewConsumer(addr, config)
 		if err == nil {
 			logrus.Info("Connected to kafka")
 			return worker, nil
