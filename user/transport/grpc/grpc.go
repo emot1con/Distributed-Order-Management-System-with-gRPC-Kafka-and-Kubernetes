@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	"user_service/auth"
 	"user_service/cmd/db"
 	"user_service/proto"
 	"user_service/repository"
@@ -85,6 +86,9 @@ func (u *UserGRPCServer) GetUserByID(ctx context.Context, req *proto.GetUserRequ
 }
 
 func GRPCListen() {
+
+	auth.InitOauth()
+
 	DB, err := db.Connect()
 	repo := repository.NewUserRepository(DB)
 	service := service.NewUserService(repo)
