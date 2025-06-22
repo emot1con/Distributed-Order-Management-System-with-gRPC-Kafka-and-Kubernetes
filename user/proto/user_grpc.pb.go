@@ -19,13 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Register_FullMethodName      = "/user.AuthService/Register"
-	AuthService_Login_FullMethodName         = "/user.AuthService/Login"
-	AuthService_RefreshToken_FullMethodName  = "/user.AuthService/RefreshToken"
-	AuthService_GetUserByID_FullMethodName   = "/user.AuthService/GetUserByID"
-	AuthService_GoogleOauth_FullMethodName   = "/user.AuthService/GoogleOauth"
-	AuthService_FacebookOauth_FullMethodName = "/user.AuthService/FacebookOauth"
-	AuthService_GithubOauth_FullMethodName   = "/user.AuthService/GithubOauth"
+	AuthService_Register_FullMethodName              = "/user.AuthService/Register"
+	AuthService_Login_FullMethodName                 = "/user.AuthService/Login"
+	AuthService_RefreshToken_FullMethodName          = "/user.AuthService/RefreshToken"
+	AuthService_GetUserByID_FullMethodName           = "/user.AuthService/GetUserByID"
+	AuthService_GoogleOauth_FullMethodName           = "/user.AuthService/GoogleOauth"
+	AuthService_FacebookOauth_FullMethodName         = "/user.AuthService/FacebookOauth"
+	AuthService_GithubOauth_FullMethodName           = "/user.AuthService/GithubOauth"
+	AuthService_GoogleOauthCallback_FullMethodName   = "/user.AuthService/GoogleOauthCallback"
+	AuthService_FacebookOauthCallback_FullMethodName = "/user.AuthService/FacebookOauthCallback"
+	AuthService_GithubOauthCallback_FullMethodName   = "/user.AuthService/GithubOauthCallback"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -36,9 +39,12 @@ type AuthServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 	GetUserByID(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error)
-	GoogleOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error)
-	FacebookOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error)
-	GithubOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	GoogleOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*URLResponse, error)
+	FacebookOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*URLResponse, error)
+	GithubOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*URLResponse, error)
+	GoogleOauthCallback(ctx context.Context, in *CodeRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	FacebookOauthCallback(ctx context.Context, in *CodeRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	GithubOauthCallback(ctx context.Context, in *CodeRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 }
 
 type authServiceClient struct {
@@ -89,9 +95,9 @@ func (c *authServiceClient) GetUserByID(ctx context.Context, in *GetUserRequest,
 	return out, nil
 }
 
-func (c *authServiceClient) GoogleOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+func (c *authServiceClient) GoogleOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*URLResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TokenResponse)
+	out := new(URLResponse)
 	err := c.cc.Invoke(ctx, AuthService_GoogleOauth_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -99,9 +105,9 @@ func (c *authServiceClient) GoogleOauth(ctx context.Context, in *EmptyRequest, o
 	return out, nil
 }
 
-func (c *authServiceClient) FacebookOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+func (c *authServiceClient) FacebookOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*URLResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TokenResponse)
+	out := new(URLResponse)
 	err := c.cc.Invoke(ctx, AuthService_FacebookOauth_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -109,10 +115,40 @@ func (c *authServiceClient) FacebookOauth(ctx context.Context, in *EmptyRequest,
 	return out, nil
 }
 
-func (c *authServiceClient) GithubOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+func (c *authServiceClient) GithubOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*URLResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(URLResponse)
+	err := c.cc.Invoke(ctx, AuthService_GithubOauth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GoogleOauthCallback(ctx context.Context, in *CodeRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TokenResponse)
-	err := c.cc.Invoke(ctx, AuthService_GithubOauth_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_GoogleOauthCallback_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) FacebookOauthCallback(ctx context.Context, in *CodeRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_FacebookOauthCallback_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GithubOauthCallback(ctx context.Context, in *CodeRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_GithubOauthCallback_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,9 +163,12 @@ type AuthServiceServer interface {
 	Login(context.Context, *LoginRequest) (*TokenResponse, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*TokenResponse, error)
 	GetUserByID(context.Context, *GetUserRequest) (*User, error)
-	GoogleOauth(context.Context, *EmptyRequest) (*TokenResponse, error)
-	FacebookOauth(context.Context, *EmptyRequest) (*TokenResponse, error)
-	GithubOauth(context.Context, *EmptyRequest) (*TokenResponse, error)
+	GoogleOauth(context.Context, *EmptyRequest) (*URLResponse, error)
+	FacebookOauth(context.Context, *EmptyRequest) (*URLResponse, error)
+	GithubOauth(context.Context, *EmptyRequest) (*URLResponse, error)
+	GoogleOauthCallback(context.Context, *CodeRequest) (*TokenResponse, error)
+	FacebookOauthCallback(context.Context, *CodeRequest) (*TokenResponse, error)
+	GithubOauthCallback(context.Context, *CodeRequest) (*TokenResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -152,14 +191,23 @@ func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *RefreshToke
 func (UnimplementedAuthServiceServer) GetUserByID(context.Context, *GetUserRequest) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserByID not implemented")
 }
-func (UnimplementedAuthServiceServer) GoogleOauth(context.Context, *EmptyRequest) (*TokenResponse, error) {
+func (UnimplementedAuthServiceServer) GoogleOauth(context.Context, *EmptyRequest) (*URLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GoogleOauth not implemented")
 }
-func (UnimplementedAuthServiceServer) FacebookOauth(context.Context, *EmptyRequest) (*TokenResponse, error) {
+func (UnimplementedAuthServiceServer) FacebookOauth(context.Context, *EmptyRequest) (*URLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FacebookOauth not implemented")
 }
-func (UnimplementedAuthServiceServer) GithubOauth(context.Context, *EmptyRequest) (*TokenResponse, error) {
+func (UnimplementedAuthServiceServer) GithubOauth(context.Context, *EmptyRequest) (*URLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GithubOauth not implemented")
+}
+func (UnimplementedAuthServiceServer) GoogleOauthCallback(context.Context, *CodeRequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GoogleOauthCallback not implemented")
+}
+func (UnimplementedAuthServiceServer) FacebookOauthCallback(context.Context, *CodeRequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FacebookOauthCallback not implemented")
+}
+func (UnimplementedAuthServiceServer) GithubOauthCallback(context.Context, *CodeRequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GithubOauthCallback not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -308,6 +356,60 @@ func _AuthService_GithubOauth_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GoogleOauthCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GoogleOauthCallback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GoogleOauthCallback_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GoogleOauthCallback(ctx, req.(*CodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_FacebookOauthCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).FacebookOauthCallback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_FacebookOauthCallback_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).FacebookOauthCallback(ctx, req.(*CodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GithubOauthCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GithubOauthCallback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GithubOauthCallback_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GithubOauthCallback(ctx, req.(*CodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -342,6 +444,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GithubOauth",
 			Handler:    _AuthService_GithubOauth_Handler,
+		},
+		{
+			MethodName: "GoogleOauthCallback",
+			Handler:    _AuthService_GoogleOauthCallback_Handler,
+		},
+		{
+			MethodName: "FacebookOauthCallback",
+			Handler:    _AuthService_FacebookOauthCallback_Handler,
+		},
+		{
+			MethodName: "GithubOauthCallback",
+			Handler:    _AuthService_GithubOauthCallback_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

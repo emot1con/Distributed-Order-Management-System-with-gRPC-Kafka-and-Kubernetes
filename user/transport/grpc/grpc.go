@@ -2,6 +2,10 @@ package grpc
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net"
 	"time"
 
@@ -10,8 +14,10 @@ import (
 	"user_service/proto"
 	"user_service/repository"
 	"user_service/service"
+	"user_service/types"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -83,6 +89,97 @@ func (u *UserGRPCServer) GetUserByID(ctx context.Context, req *proto.GetUserRequ
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}, nil
+}
+
+func (u *UserGRPCServer) GoogleOAuthHandler(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
+	url := auth.OauthGoogleConfig.AuthCodeURL("state", oauth2.AccessTypeOffline)
+	return &proto.URLResponse{
+		Url: url,
+	}, nil
+}
+
+func (u *UserGRPCServer) FacebookOAuthHandler(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
+	url := auth.OauthFacebookConfig.AuthCodeURL("state", oauth2.AccessTypeOffline)
+	return &proto.URLResponse{
+		Url: url}, nil
+}
+
+func (u *UserGRPCServer) GithubOAuthHandler(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
+	url := auth.OauthGithubConfig.AuthCodeURL("state", oauth2.AccessTypeOffline)
+	return &proto.URLResponse{
+		Url: url,
+	}, nil
+}
+
+func (u *UserGRPCServer) OAuthGoogleCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
+	code := req.Code
+	if code == "" {
+		return nil, fmt.Errorf("missing code")
+	}
+
+	logrus.Info("handling Google OAuth authentication callback")
+
+	token, err := auth.OauthGoogleConfig.Exchange(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+
+	client := auth.OauthGoogleConfig.Client(ctx, token)
+	resp, err := client.Get("https://www.googleapis.com/oauth2/v1/userinfo")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	oauthUser := &types.OAuthUserData{}
+	if err := json.NewDecoder(resp.Body).Decode(oauthUser); err != nil {
+		return nil, err
+	}
+
+	if oauthUser.Email == "" {
+		return nil, fmt.Errorf("email not found or private")
+	}
+
+	oauthUser.Provider = "Google"
+
+	userResp, err := u.service.GetUserByEmail(oauthUser.Email)
+	if err != nil && (err != sql.ErrNoRows && err != errors.New("user not found")) {
+		return nil, err
+	} else if userResp != nil {
+		userResp.Provider = "Google"
+		userResp.ProviderId = oauthUser.ProviderID
+
+		if err := u.service.UpdateUser(userResp); err != nil {
+			return nil, err
+		}
+
+		jwtToken, err := auth.CreateFullJWTToken(int(userResp.ID))
+		if err != nil {
+			return nil, err
+		}
+
+		return jwtToken, nil
+	}
+	if err := u.service.Register(&proto.RegisterPayload{
+		Email:      oauthUser.Email,
+		Provider:   "Google",
+		ProviderId: oauthUser.ProviderID,
+		FullName:   oauthUser.Name,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to register user: %v", err)
+	}
+
+	user, err := u.service.GetUserByEmail(oauthUser.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by email: %v", err)
+	}
+
+	jwtToken, err := auth.CreateFullJWTToken(int(user.ID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWT token: %v", err)
+	}
+
+	return jwtToken, nil
 }
 
 func GRPCListen() {

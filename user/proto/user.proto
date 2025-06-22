@@ -45,6 +45,10 @@ message RefreshTokenRequest {
   RefreshTokenPayload payload = 1;
 }
 
+message CodeRequest{
+  string code = 1;
+}
+
 message EmptyRequest{}
 
 message EmptyResponse{}
@@ -58,6 +62,10 @@ message TokenResponse {
   string role = 6;
 }
 
+message URLResponse {
+  string url = 1;
+}
+
 message GetUserRequest {
   int64 user_id = 1;
 }
@@ -67,7 +75,10 @@ service AuthService {
   rpc Login(LoginRequest) returns (TokenResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (TokenResponse);
   rpc GetUserByID(GetUserRequest) returns (User);
-  rpc GoogleOauth(EmptyRequest) returns (TokenResponse);
-  rpc FacebookOauth(EmptyRequest) returns (TokenResponse);
-  rpc GithubOauth(EmptyRequest) returns (TokenResponse);
+  rpc GoogleOauth(EmptyRequest) returns (URLResponse);
+  rpc FacebookOauth(EmptyRequest) returns (URLResponse);
+  rpc GithubOauth(EmptyRequest) returns (URLResponse);
+  rpc GoogleOauthCallback(CodeRequest) returns (TokenResponse);
+  rpc FacebookOauthCallback(CodeRequest) returns (TokenResponse);
+  rpc GithubOauthCallback(CodeRequest) returns (TokenResponse);
 }

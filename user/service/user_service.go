@@ -117,3 +117,19 @@ func (u *UserService) GetUserByID(ID int) (*proto.User, error) {
 
 	return user, nil
 }
+
+func (u *UserService) GetUserByEmail(email string) (*proto.User, error) {
+	user, err := u.repo.GetUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (u *UserService) UpdateUser(user *proto.User) error {
+	if err := u.repo.UpdateUser(user); err != nil {
+		return err
+	}
+	return nil
+}
