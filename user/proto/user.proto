@@ -45,6 +45,8 @@ message RefreshTokenRequest {
   RefreshTokenPayload payload = 1;
 }
 
+message EmptyRequest{}
+
 message EmptyResponse{}
 
 message TokenResponse {
@@ -65,4 +67,7 @@ service AuthService {
   rpc Login(LoginRequest) returns (TokenResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (TokenResponse);
   rpc GetUserByID(GetUserRequest) returns (User);
+  rpc GoogleOauth(EmptyRequest) returns (TokenResponse);
+  rpc FacebookOauth(EmptyRequest) returns (TokenResponse);
+  rpc GithubOauth(EmptyRequest) returns (TokenResponse);
 }

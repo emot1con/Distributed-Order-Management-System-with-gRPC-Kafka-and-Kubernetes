@@ -86,7 +86,6 @@ func (u *UserGRPCServer) GetUserByID(ctx context.Context, req *proto.GetUserRequ
 }
 
 func GRPCListen() {
-
 	auth.InitOauth()
 
 	DB, err := db.Connect()

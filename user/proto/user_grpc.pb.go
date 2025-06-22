@@ -19,10 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Register_FullMethodName     = "/user.AuthService/Register"
-	AuthService_Login_FullMethodName        = "/user.AuthService/Login"
-	AuthService_RefreshToken_FullMethodName = "/user.AuthService/RefreshToken"
-	AuthService_GetUserByID_FullMethodName  = "/user.AuthService/GetUserByID"
+	AuthService_Register_FullMethodName      = "/user.AuthService/Register"
+	AuthService_Login_FullMethodName         = "/user.AuthService/Login"
+	AuthService_RefreshToken_FullMethodName  = "/user.AuthService/RefreshToken"
+	AuthService_GetUserByID_FullMethodName   = "/user.AuthService/GetUserByID"
+	AuthService_GoogleOauth_FullMethodName   = "/user.AuthService/GoogleOauth"
+	AuthService_FacebookOauth_FullMethodName = "/user.AuthService/FacebookOauth"
+	AuthService_GithubOauth_FullMethodName   = "/user.AuthService/GithubOauth"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -33,6 +36,9 @@ type AuthServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 	GetUserByID(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error)
+	GoogleOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	FacebookOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	GithubOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 }
 
 type authServiceClient struct {
@@ -83,6 +89,36 @@ func (c *authServiceClient) GetUserByID(ctx context.Context, in *GetUserRequest,
 	return out, nil
 }
 
+func (c *authServiceClient) GoogleOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_GoogleOauth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) FacebookOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_FacebookOauth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GithubOauth(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_GithubOauth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -91,6 +127,9 @@ type AuthServiceServer interface {
 	Login(context.Context, *LoginRequest) (*TokenResponse, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*TokenResponse, error)
 	GetUserByID(context.Context, *GetUserRequest) (*User, error)
+	GoogleOauth(context.Context, *EmptyRequest) (*TokenResponse, error)
+	FacebookOauth(context.Context, *EmptyRequest) (*TokenResponse, error)
+	GithubOauth(context.Context, *EmptyRequest) (*TokenResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -112,6 +151,15 @@ func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *RefreshToke
 }
 func (UnimplementedAuthServiceServer) GetUserByID(context.Context, *GetUserRequest) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserByID not implemented")
+}
+func (UnimplementedAuthServiceServer) GoogleOauth(context.Context, *EmptyRequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GoogleOauth not implemented")
+}
+func (UnimplementedAuthServiceServer) FacebookOauth(context.Context, *EmptyRequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FacebookOauth not implemented")
+}
+func (UnimplementedAuthServiceServer) GithubOauth(context.Context, *EmptyRequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GithubOauth not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -206,6 +254,60 @@ func _AuthService_GetUserByID_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GoogleOauth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GoogleOauth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GoogleOauth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GoogleOauth(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_FacebookOauth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).FacebookOauth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_FacebookOauth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).FacebookOauth(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GithubOauth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GithubOauth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GithubOauth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GithubOauth(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +330,18 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserByID",
 			Handler:    _AuthService_GetUserByID_Handler,
+		},
+		{
+			MethodName: "GoogleOauth",
+			Handler:    _AuthService_GoogleOauth_Handler,
+		},
+		{
+			MethodName: "FacebookOauth",
+			Handler:    _AuthService_FacebookOauth_Handler,
+		},
+		{
+			MethodName: "GithubOauth",
+			Handler:    _AuthService_GithubOauth_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

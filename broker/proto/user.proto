@@ -10,8 +10,10 @@ message User {
   string full_name = 2;
   string email = 3;
   string password = 4;
-  string created_at = 5;
-  string updated_at = 6;
+  string provider = 5;
+  string provider_id = 6;
+  string created_at = 7;
+  string updated_at = 8;
 }
 
 message RegisterPayload {
@@ -41,6 +43,8 @@ message RefreshTokenRequest {
   RefreshTokenPayload payload = 1;
 }
 
+message EmptyRequest{}
+
 message EmptyResponse{}
 
 message TokenResponse {
@@ -61,4 +65,7 @@ service AuthService {
   rpc Login(LoginRequest) returns (TokenResponse);
   rpc RefreshToken(RefreshTokenRequest) returns (TokenResponse);
   rpc GetUserByID(GetUserRequest) returns (User);
+  rpc GoogleOauth(EmptyRequest) returns (TokenResponse);
+  rpc FacebookOauth(EmptyRequest) returns (TokenResponse);
+  rpc GithubOauth(EmptyRequest) returns (TokenResponse);
 }
