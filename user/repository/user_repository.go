@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"time"
 	"user_service/proto"
 	"user_service/types"
 
@@ -31,6 +32,8 @@ func (u *UserRepositoryImpl) Register(payload *proto.RegisterPayload) error {
 		FullName:   payload.FullName,
 		Provider:   payload.Provider,
 		ProviderId: payload.ProviderId,
+		CreatedAt:  time.Now().Format(time.RFC3339),
+		UpdatedAt:  time.Now().Format(time.RFC3339),
 	}).Error; err != nil {
 		return err
 	}
@@ -72,9 +75,10 @@ func (u *UserRepositoryImpl) GetUserByID(ID int) (*proto.User, error) {
 func (u *UserRepositoryImpl) UpdateUser(user *proto.User) error {
 	// Update the user in database
 	if err := u.DB.Model(&types.User{}).Where("id = ?", user.ID).Updates(map[string]interface{}{
-		"full_name": user.FullName,
-		"email":     user.Email,
-		"password":  user.Password,
+		"full_name":  user.FullName,
+		"email":      user.Email,
+		"password":   user.Password,
+		"updated_at": time.Now().Format(time.RFC3339),
 	}).Error; err != nil {
 		return err
 	}

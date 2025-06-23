@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
 )
 
 type UserGRPCServer struct {
@@ -91,27 +92,27 @@ func (u *UserGRPCServer) GetUserByID(ctx context.Context, req *proto.GetUserRequ
 	}, nil
 }
 
-func (u *UserGRPCServer) GoogleOAuthHandler(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
+func (u *UserGRPCServer) GoogleOauth(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
 	url := auth.OauthGoogleConfig.AuthCodeURL("state", oauth2.AccessTypeOffline)
 	return &proto.URLResponse{
 		Url: url,
 	}, nil
 }
 
-func (u *UserGRPCServer) FacebookOAuthHandler(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
+func (u *UserGRPCServer) FacebookOauth(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
 	url := auth.OauthFacebookConfig.AuthCodeURL("state", oauth2.AccessTypeOffline)
 	return &proto.URLResponse{
 		Url: url}, nil
 }
 
-func (u *UserGRPCServer) GithubOAuthHandler(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
+func (u *UserGRPCServer) GithubOauth(ctx context.Context, req *proto.EmptyRequest) (*proto.URLResponse, error) {
 	url := auth.OauthGithubConfig.AuthCodeURL("state", oauth2.AccessTypeOffline)
 	return &proto.URLResponse{
 		Url: url,
 	}, nil
 }
 
-func (u *UserGRPCServer) OAuthGoogleCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
+func (u *UserGRPCServer) GoogleOauthCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
 	code := req.Code
 	if code == "" {
 		return nil, fmt.Errorf("missing code")
@@ -142,8 +143,9 @@ func (u *UserGRPCServer) OAuthGoogleCallback(ctx context.Context, req *proto.Cod
 
 	oauthUser.Provider = "Google"
 
+	logrus.Info("getting user by email from database")
 	userResp, err := u.service.GetUserByEmail(oauthUser.Email)
-	if err != nil && (err != sql.ErrNoRows && err != errors.New("user not found")) {
+	if err != nil && (err != sql.ErrNoRows && !errors.Is(err, gorm.ErrRecordNotFound)) {
 		return nil, err
 	} else if userResp != nil {
 		userResp.Provider = "Google"
@@ -182,7 +184,7 @@ func (u *UserGRPCServer) OAuthGoogleCallback(ctx context.Context, req *proto.Cod
 	return jwtToken, nil
 }
 
-func (u *UserGRPCServer) OAuthFacebookCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
+func (u *UserGRPCServer) FacebookOauthCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
 	code := req.Code
 	if code == "" {
 		return nil, fmt.Errorf("missing code")
@@ -214,7 +216,7 @@ func (u *UserGRPCServer) OAuthFacebookCallback(ctx context.Context, req *proto.C
 	oauthUser.Provider = "Facebook"
 
 	userResp, err := u.service.GetUserByEmail(oauthUser.Email)
-	if err != nil && (err != sql.ErrNoRows && err != errors.New("user not found")) {
+	if err != nil && (err != sql.ErrNoRows && !errors.Is(err, gorm.ErrRecordNotFound)) {
 		return nil, err
 	} else if userResp != nil {
 		userResp.Provider = "Facebook"
@@ -253,7 +255,7 @@ func (u *UserGRPCServer) OAuthFacebookCallback(ctx context.Context, req *proto.C
 	return jwtToken, nil
 }
 
-func (u *UserGRPCServer) OAuthGithubCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
+func (u *UserGRPCServer) GithubOauthCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
 	code := req.Code
 	if code == "" {
 		return nil, fmt.Errorf("missing code")
@@ -285,7 +287,7 @@ func (u *UserGRPCServer) OAuthGithubCallback(ctx context.Context, req *proto.Cod
 	oauthUser.Provider = "Github"
 
 	userResp, err := u.service.GetUserByEmail(oauthUser.Email)
-	if err != nil && (err != sql.ErrNoRows && err != errors.New("user not found")) {
+	if err != nil && (err != sql.ErrNoRows && !errors.Is(err, gorm.ErrRecordNotFound)) {
 		return nil, err
 	} else if userResp != nil {
 		userResp.Provider = "Github"
