@@ -182,6 +182,148 @@ func (u *UserGRPCServer) OAuthGoogleCallback(ctx context.Context, req *proto.Cod
 	return jwtToken, nil
 }
 
+func (u *UserGRPCServer) OAuthFacebookCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
+	code := req.Code
+	if code == "" {
+		return nil, fmt.Errorf("missing code")
+	}
+
+	logrus.Info("handling Facebook OAuth authentication callback")
+
+	token, err := auth.OauthFacebookConfig.Exchange(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+
+	client := auth.OauthFacebookConfig.Client(ctx, token)
+	resp, err := client.Get("https://graph.facebook.com/me?fields=id,name,email&access_token=" + token.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	oauthUser := &types.OAuthUserData{}
+	if err := json.NewDecoder(resp.Body).Decode(oauthUser); err != nil {
+		return nil, err
+	}
+
+	if oauthUser.Email == "" {
+		return nil, fmt.Errorf("email not found or private")
+	}
+
+	oauthUser.Provider = "Facebook"
+
+	userResp, err := u.service.GetUserByEmail(oauthUser.Email)
+	if err != nil && (err != sql.ErrNoRows && err != errors.New("user not found")) {
+		return nil, err
+	} else if userResp != nil {
+		userResp.Provider = "Facebook"
+		userResp.ProviderId = oauthUser.ProviderID
+
+		if err := u.service.UpdateUser(userResp); err != nil {
+			return nil, err
+		}
+
+		jwtToken, err := auth.CreateFullJWTToken(int(userResp.ID))
+		if err != nil {
+			return nil, err
+		}
+
+		return jwtToken, nil
+	}
+	if err := u.service.Register(&proto.RegisterPayload{
+		Email:      oauthUser.Email,
+		Provider:   "Facebook",
+		ProviderId: oauthUser.ProviderID,
+		FullName:   oauthUser.Name,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to register user: %v", err)
+	}
+
+	user, err := u.service.GetUserByEmail(oauthUser.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by email: %v", err)
+	}
+
+	jwtToken, err := auth.CreateFullJWTToken(int(user.ID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWT token: %v", err)
+	}
+
+	return jwtToken, nil
+}
+
+func (u *UserGRPCServer) OAuthGithubCallback(ctx context.Context, req *proto.CodeRequest) (*proto.TokenResponse, error) {
+	code := req.Code
+	if code == "" {
+		return nil, fmt.Errorf("missing code")
+	}
+
+	logrus.Info("handling Github OAuth authentication callback")
+
+	token, err := auth.OauthGithubConfig.Exchange(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+
+	client := auth.OauthGithubConfig.Client(ctx, token)
+	resp, err := client.Get("https://api.github.com/user")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	oauthUser := &types.OAuthUserData{}
+	if err := json.NewDecoder(resp.Body).Decode(oauthUser); err != nil {
+		return nil, err
+	}
+
+	if oauthUser.Email == "" {
+		return nil, fmt.Errorf("email not found or private")
+	}
+
+	oauthUser.Provider = "Github"
+
+	userResp, err := u.service.GetUserByEmail(oauthUser.Email)
+	if err != nil && (err != sql.ErrNoRows && err != errors.New("user not found")) {
+		return nil, err
+	} else if userResp != nil {
+		userResp.Provider = "Github"
+		userResp.ProviderId = oauthUser.ProviderID
+
+		if err := u.service.UpdateUser(userResp); err != nil {
+			return nil, err
+		}
+
+		jwtToken, err := auth.CreateFullJWTToken(int(userResp.ID))
+		if err != nil {
+			return nil, err
+		}
+
+		return jwtToken, nil
+	}
+	if err := u.service.Register(&proto.RegisterPayload{
+		Email:      oauthUser.Email,
+		Provider:   "Github",
+		ProviderId: oauthUser.ProviderID,
+		FullName:   oauthUser.Name,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to register user: %v", err)
+	}
+
+	user, err := u.service.GetUserByEmail(oauthUser.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by email: %v", err)
+	}
+
+	jwtToken, err := auth.CreateFullJWTToken(int(user.ID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWT token: %v", err)
+	}
+
+	return jwtToken, nil
+}
+
 func GRPCListen() {
 	auth.InitOauth()
 
