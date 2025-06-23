@@ -32,11 +32,15 @@ func (u *UserService) Register(payload *proto.RegisterPayload) error {
 		return fmt.Errorf("email already exists")
 	}
 
-	hashedPassword, err := auth.GeneratePasswordHash(payload.Password)
-	if err != nil {
-		return err
+	if payload.Provider == "" || payload.Provider == "local" {
+		hashedPassword, err := auth.GeneratePasswordHash(payload.Password)
+		if err != nil {
+			return err
+		}
+		payload.Password = hashedPassword
+	} else {
+		payload.Password = ""
 	}
-	payload.Password = hashedPassword
 
 	logrus.Info("registering user to db")
 	if err := u.repo.Register(payload); err != nil {
