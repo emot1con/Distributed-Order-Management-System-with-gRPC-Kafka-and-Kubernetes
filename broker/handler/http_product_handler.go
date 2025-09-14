@@ -4,6 +4,7 @@ import (
 	"broker/auth"
 	"broker/proto"
 	"broker/repository"
+	"broker/types"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -57,11 +58,25 @@ func (u *ProductHandler) ListProducts(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(200, proto.ProductList{
+
+	items := make([]*types.ProductDTO, 0, len(response.Products))
+	for _, p := range response.Products {
+		items = append(items, &types.ProductDTO{
+			Id:          p.Id,
+			Name:        p.Name,
+			Description: p.Description,
+			Price:       p.Price,
+			Stock:       p.Stock,
+			CreatedAt:   p.CreatedAt,
+			UpdatedAt:   p.UpdatedAt,
+		})
+	}
+
+	c.JSON(200, types.ProductListDTO{
 		Page:      response.Page,
 		Total:     response.Total,
 		TotalPage: response.TotalPage,
-		Products:  response.Products,
+		Products:  items,
 	})
 }
 
@@ -85,8 +100,17 @@ func (u *ProductHandler) UpdateProduct(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+	item := &types.ProductDTO{
+		Id:          response.Id,
+		Name:        response.Name,
+		Description: response.Description,
+		Price:       response.Price,
+		Stock:       response.Stock,
+		CreatedAt:   response.CreatedAt,
+		UpdatedAt:   response.UpdatedAt,
+	}
 
-	c.JSON(200, response)
+	c.JSON(200, item)
 }
 
 func (u *ProductHandler) DeleteProduct(c *gin.Context) {

@@ -35,6 +35,7 @@ func (u *OrderRepositoryImpl) CreateOrder(payload *proto.CreateOrderRequest) (*p
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	logrus.Infof("Create the order and pass to order service with")
 	return u.client.CreateOrder(ctx, payload)
 }
 
@@ -42,5 +43,6 @@ func (u *OrderRepositoryImpl) GetOrder(payload *proto.GetOrderRequest) (*proto.O
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	logrus.Infof("Get the order by ID and pass to order service with ID: %d", payload.OrderId)
 	return u.client.GetOrder(ctx, payload)
 }

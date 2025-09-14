@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type OrderHandler struct {
@@ -38,6 +39,7 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
+	logrus.Infof("Creating payload for user ID: %d", userID)
 	var payload proto.CreateOrderRequest
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -45,6 +47,7 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 	}
 	payload.UserId = int32(userID)
 
+	logrus.Infof("Creating order for user ID: %d", userID)
 	order, err := u.orderRepo.CreateOrder(&payload)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -66,6 +69,7 @@ func (u *OrderHandler) CreateOrder(c *gin.Context) {
 }
 
 func (u *OrderHandler) GetOrder(c *gin.Context) {
+	logrus.Info("Fetching order by ID")
 	query := c.Query("order_id")
 	orderID, err := strconv.Atoi(query)
 	if err != nil {
@@ -73,6 +77,7 @@ func (u *OrderHandler) GetOrder(c *gin.Context) {
 		return
 	}
 
+	logrus.Infof("calling repo")
 	order, err := u.orderRepo.GetOrder(&proto.GetOrderRequest{
 		OrderId: int32(orderID),
 	})

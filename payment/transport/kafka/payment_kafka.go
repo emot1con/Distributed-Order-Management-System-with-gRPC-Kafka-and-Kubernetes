@@ -50,7 +50,6 @@ func ProcessMessage(addr []string, topic []string, groupID string, service *serv
 	if err != nil {
 		logrus.Fatalf("error when connect to kafka: %v", err)
 	}
-
 	defer consumerGroup.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
