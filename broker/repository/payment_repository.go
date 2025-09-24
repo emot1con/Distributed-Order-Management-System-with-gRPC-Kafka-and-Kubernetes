@@ -20,7 +20,7 @@ type PaymentRepositoryImpl struct {
 }
 
 func NewPaymentRepository() *PaymentRepositoryImpl {
-	conn, err := grpc.NewClient("payment_service:60001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("payment-service:60001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logrus.Fatalf("Failed to connect: %v", err)
 	}

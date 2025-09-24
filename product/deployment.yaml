@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: product-service
+  name: product-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+      - image: numpyh/product-service:1
+        name: product-service
+        imagePullPolicy: Always
+        resources: 
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 40001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 40001
+          initialDelaySeconds: 5
+          periodSeconds: 5     
+        envFrom:
+        - secretRef:
+            name: product-service-secret
+status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: product-service
+  name: product-service
+spec:
+  ports:
+  - name: 40001-40001
+    port: 40001
+    protocol: TCP
+    targetPort: 40001
+  selector:
+    app: product-service
+  type: ClusterIP
+status:
+  loadBalancer: {}
+

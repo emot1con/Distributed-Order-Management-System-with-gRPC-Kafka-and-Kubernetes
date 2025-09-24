@@ -23,7 +23,7 @@ type ProductRepositoryImpl struct {
 }
 
 func NewProductRepository() *ProductRepositoryImpl {
-	conn, err := grpc.NewClient("product_service:40001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("product-service:40001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logrus.Fatalf("Failed to connect: %v", err)
 	}

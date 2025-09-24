@@ -28,7 +28,7 @@ type UserRepositoryImpl struct {
 }
 
 func NewUserRepository() *UserRepositoryImpl {
-	conn, err := grpc.NewClient("user_service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("user-service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logrus.Fatalf("Failed to connect: %v", err)
 	}

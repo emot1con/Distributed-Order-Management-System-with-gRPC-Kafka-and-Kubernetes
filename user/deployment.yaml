@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: user-service
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - image: numpyh/user-service:1
+        name: user-service
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 50001
+          protocol: TCP
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 50001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 50001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        envFrom: 
+        - secretRef:
+            name: user-service-secret
+status: {}
+
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: user-service
+  name: user-service
+spec:
+  ports:
+  - name: grpc
+    port: 50001
+    protocol: TCP
+    targetPort: 50001
+  selector:
+    app: user-service
+  type: ClusterIP
+status:
+  loadBalancer: {}
+
