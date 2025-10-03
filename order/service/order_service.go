@@ -57,7 +57,15 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 	if err != nil {
 		return nil, err
 	}
-	defer helper.CommitOrRollback(tx)
+
+	rollback := true
+	defer func() {
+		if rollback {
+			if rErr := tx.Rollback(); rErr != nil {
+				logrus.Errorf("Rollback error: %v", rErr)
+			}
+		}
+	}()
 
 	logrus.Info("Create order")
 	orderID, err := u.orderRepo.CreateOrder(payload, payload.TotalPrice, tx)
@@ -93,6 +101,13 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 		}
 	}
 
+	// Commit transaction sebelum publish Kafka
+	logrus.Info("Committing transaction")
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	rollback = false
+
 	logrus.Info("Sending message to kafka")
 	partition, offset, err := kafka.SendMessage(addr, topic, &proto.Order{
 		Id:         int32(orderID),
@@ -101,9 +116,10 @@ func (u *OrderService) CreateOrder(payload *proto.CreateOrderRequest) (*proto.Or
 		TotalPrice: payload.TotalPrice,
 	})
 	if err != nil {
-		return nil, err
+		logrus.Errorf("Failed to send message to Kafka: %v", err)
+	} else {
+		logrus.Infof("Message sent to topic: %s partition: %d, offset: %d", topic, partition, offset)
 	}
-	logrus.Infof("Message sent to topic: %s partition: %d, offset: %d", topic, partition, offset)
 
 	return &proto.OrderResponse{
 		Order: &proto.Order{

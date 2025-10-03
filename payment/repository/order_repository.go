@@ -19,7 +19,7 @@ type OrderRepositoryImpl struct {
 }
 
 func NewOrderRepository() *OrderRepositoryImpl {
-	conn, err := grpc.NewClient("order_service:30001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("order-service:30001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logrus.Fatalf("Failed to connect: %v", err)
 	}
