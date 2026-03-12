@@ -16,7 +16,7 @@ spec:
         app: broker-service
     spec:
       containers:
-      - image: numpyh/broker:v2.4
+      - image: numpyh/broker:v3.0
         name: broker-service
         resources: 
           requests:

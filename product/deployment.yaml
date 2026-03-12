@@ -16,7 +16,7 @@ spec:
         app: product-service
     spec:
       containers:
-      - image: numpyh/product-service:1
+      - image: numpyh/product:v3.0
         name: product-service
         imagePullPolicy: Always
         resources: 
