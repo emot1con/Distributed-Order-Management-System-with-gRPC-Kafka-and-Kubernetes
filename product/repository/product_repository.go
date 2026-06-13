@@ -22,15 +22,15 @@ func NewProductRepositoryImpl() *ProductRepositoryImpl {
 }
 
 func (u *ProductRepositoryImpl) Create(ctx context.Context, tx *sql.Tx, payload *proto.ProductPayload) error {
-	SQL := "INSERT INTO products(name, description, price, stock) VALUES ($1, $2, $3, $4)"
-	if _, err := tx.ExecContext(ctx, SQL, payload.Name, payload.Description, payload.Price, payload.Stock); err != nil {
+	SQL := "INSERT INTO products(name, description, price, stock, image_url) VALUES ($1, $2, $3, $4, $5)"
+	if _, err := tx.ExecContext(ctx, SQL, payload.Name, payload.Description, payload.Price, payload.Stock, payload.ImageUrl); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (u *ProductRepositoryImpl) GetProductByID(ctx context.Context, tx *sql.Tx, ID int) (*proto.Product, error) {
-	SQL := "SELECT id, name, description, price, stock, created_at, updated_at FROM products WHERE id = $1"
+	SQL := "SELECT id, name, description, price, stock, image_url, created_at, updated_at FROM products WHERE id = $1"
 	rows := tx.QueryRowContext(ctx, SQL, ID)
 
 	productResponse := &proto.Product{}
@@ -40,6 +40,7 @@ func (u *ProductRepositoryImpl) GetProductByID(ctx context.Context, tx *sql.Tx, 
 		&productResponse.Description,
 		&productResponse.Price,
 		&productResponse.Stock,
+		&productResponse.ImageUrl,
 		&productResponse.CreatedAt,
 		&productResponse.UpdatedAt,
 	); err != nil {
@@ -52,7 +53,7 @@ func (u *ProductRepositoryImpl) GetProductByID(ctx context.Context, tx *sql.Tx, 
 }
 
 func (u *ProductRepositoryImpl) GetAllProduct(ctx context.Context, db *sql.DB, offset int) ([]*proto.Product, int, int, error) {
-	SQL := "SELECT id, name, description, price, stock, created_at, updated_at FROM products ORDER BY id ASC LIMIT 15 OFFSET $1"
+	SQL := "SELECT id, name, description, price, stock, image_url, created_at, updated_at FROM products ORDER BY id ASC LIMIT 15 OFFSET $1"
 	rows, err := db.QueryContext(ctx, SQL, offset)
 	if err != nil {
 		return nil, 0, 0, err
@@ -62,7 +63,7 @@ func (u *ProductRepositoryImpl) GetAllProduct(ctx context.Context, db *sql.DB, o
 	var products []*proto.Product
 	for rows.Next() {
 		productItem := &proto.Product{}
-		if err := rows.Scan(&productItem.Id, &productItem.Name, &productItem.Description, &productItem.Price, &productItem.Stock, &productItem.CreatedAt, &productItem.UpdatedAt); err != nil {
+		if err := rows.Scan(&productItem.Id, &productItem.Name, &productItem.Description, &productItem.Price, &productItem.Stock, &productItem.ImageUrl, &productItem.CreatedAt, &productItem.UpdatedAt); err != nil {
 			return nil, 0, 0, err
 		}
 		products = append(products, productItem)
@@ -83,9 +84,10 @@ func (u *ProductRepositoryImpl) UpdateProduct(ctx context.Context, tx *sql.Tx, p
             description = COALESCE(NULLIF($2, ''), description),
             price = $3,
             stock = $4,
+            image_url = COALESCE(NULLIF($5, ''), image_url),
             updated_at = NOW()
-        WHERE id = $5`
-	if _, err := tx.ExecContext(ctx, SQL, payload.Name, payload.Description, payload.Price, payload.Stock, payload.Id); err != nil {
+        WHERE id = $6`
+	if _, err := tx.ExecContext(ctx, SQL, payload.Name, payload.Description, payload.Price, payload.Stock, payload.ImageUrl, payload.Id); err != nil {
 		return err
 	}
 

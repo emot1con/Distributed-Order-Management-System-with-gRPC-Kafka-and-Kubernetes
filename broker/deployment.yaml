@@ -16,7 +16,8 @@ spec:
         app: broker-service
     spec:
       containers:
-      - image: numpyh/broker:v3.0
+      - image: numpyh/broker:v3.1
+        imagePullPolicy: IfNotPresent
         name: broker-service
         resources: 
           requests:

@@ -71,6 +71,7 @@ func (u *ProductHandler) ListProducts(c *gin.Context) {
 			Description: p.Description,
 			Price:       p.Price,
 			Stock:       p.Stock,
+			ImageUrl:    p.ImageUrl,
 			CreatedAt:   p.CreatedAt,
 			UpdatedAt:   p.UpdatedAt,
 		})
@@ -110,6 +111,7 @@ func (u *ProductHandler) UpdateProduct(c *gin.Context) {
 		Description: response.Description,
 		Price:       response.Price,
 		Stock:       response.Stock,
+		ImageUrl:    response.ImageUrl,
 		CreatedAt:   response.CreatedAt,
 		UpdatedAt:   response.UpdatedAt,
 	}

@@ -17,8 +17,8 @@ export function Loading({ size = 'md', className, text }: LoadingProps) {
   
   return (
     <div className={cn('flex flex-col items-center justify-center', className)}>
-      <Loader2 className={cn(sizes[size], 'animate-spin text-primary-600')} />
-      {text && <p className="mt-2 text-sm text-gray-500">{text}</p>}
+      <Loader2 className={cn(sizes[size], 'animate-spin text-accent')} />
+      {text && <p className="mt-2 text-sm text-slate-400">{text}</p>}
     </div>
   );
 }
@@ -29,7 +29,7 @@ interface LoadingPageProps {
 
 export function LoadingPage({ text = 'Loading...' }: LoadingPageProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-surface">
       <Loading size="lg" text={text} />
     </div>
   );

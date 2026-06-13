@@ -9,8 +9,8 @@ export const config = {
   oauthRedirectUrl: process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URL || 'http://localhost:3000',
   
   // App Configuration
-  appName: process.env.NEXT_PUBLIC_APP_NAME || 'Microservice Store',
-  appDescription: process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'E-Commerce Platform',
+  appName: process.env.NEXT_PUBLIC_APP_NAME || 'Vespera',
+  appDescription: process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Premium Digital Marketplace',
   
   // API Endpoints
   endpoints: {

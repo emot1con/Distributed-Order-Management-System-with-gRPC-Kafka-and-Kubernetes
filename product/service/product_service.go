@@ -105,6 +105,7 @@ func (u *ProductService) Update(payload *proto.Product) (*proto.Product, error) 
 	productResult.Description = payload.Description
 	productResult.Price = payload.Price
 	productResult.Stock = payload.Stock
+	productResult.ImageUrl = payload.ImageUrl
 
 	if err := u.repo.UpdateProduct(u.ctx, tx, payload); err != nil {
 		return nil, err

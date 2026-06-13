@@ -6,6 +6,7 @@ type ProductDTO struct {
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
 	Stock       int32   `json:"stock"`
+	ImageUrl    string  `json:"image_url"`
 	CreatedAt   string  `json:"created_at"`
 	UpdatedAt   string  `json:"updated_at"`
 }

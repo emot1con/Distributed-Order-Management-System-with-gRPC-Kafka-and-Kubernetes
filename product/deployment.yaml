@@ -16,9 +16,9 @@ spec:
         app: product-service
     spec:
       containers:
-      - image: numpyh/product:v3.0
+      - image: numpyh/product:v2.1
         name: product-service
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         resources: 
           requests:
             memory: "64Mi"

@@ -27,17 +27,26 @@ export function Providers({ children }: ProvidersProps) {
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#363636',
-            color: '#fff',
+            background: '#111118',
+            color: '#f1f5f9',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
           },
           success: {
             style: {
-              background: '#22c55e',
+              borderColor: 'rgba(16, 185, 129, 0.3)',
+            },
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#111118',
             },
           },
           error: {
             style: {
-              background: '#ef4444',
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+            },
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#111118',
             },
           },
         }}
